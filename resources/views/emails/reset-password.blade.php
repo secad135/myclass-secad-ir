@@ -9,7 +9,7 @@
         
         <div style="text-align: center; margin-bottom: 20px;">
             <!-- لوگوی شما -->
-            <img src="{{ asset('docs/logo.png') }}" alt="MyClass" style="max-height: 80px; border-radius: 10px;">
+            <!-- <img src="{{ asset('docs/logo.png') }}" alt="MyClass" style="max-height: 80px; border-radius: 10px;"> -->
             <h2 style="color: #212529; margin-top: 15px;">بازیابی رمز عبور</h2>
         </div>
 
