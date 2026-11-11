@@ -24,7 +24,8 @@
             text-decoration: none;
         }
         .hero-section {
-            padding: 40px 0;
+            padding-top: 40px;
+            padding-bottom: 40px;
         }
         .login-card {
             background: white;
