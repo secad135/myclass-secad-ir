@@ -64,4 +64,11 @@ class User extends Authenticatable
             'school_class_id'
         )->withPivot('status', 'enrolled_at', 'notes')->withTimestamps();
     }
+        /**
+     * ارسال نوتیفیکیشن اختصاصی برای بازیابی رمز عبور
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new \App\Notifications\ResetPasswordNotification($token));
+    }
 }
