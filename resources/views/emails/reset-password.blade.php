@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>بازیابی رمز عبور</title>
 </head>
-<body style="background-color: #f4f6f9; font-family: Tahoma, Arial, sans-serif; padding: 20px; text-align: right; direction: rtl; margin: 0;">
+<body style="background-color: #f4f6f9; font-family: 'Vazir', Tahoma, Arial, sans-serif; padding: 20px; text-align: right; direction: rtl; margin: 0;">
     <div style="max-width: 600px; margin: 0 auto; background: #ffffff; padding: 30px; border-radius: 8px; border-top: 5px solid #0d6efd; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
         
         <div style="text-align: center; margin-bottom: 20px;">

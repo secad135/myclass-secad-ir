@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>سامانه مدیریت کلاس — MyClass</title>
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
     <style>
         body {
             background: #f4f6f9;
-            font-family: Tahoma, Arial, sans-serif;
+            font-family: 'Vazir', Tahoma, Arial, sans-serif;
             min-height: 100vh;
         }
         .navbar-custom {

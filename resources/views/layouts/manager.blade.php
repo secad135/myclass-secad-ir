@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'پنل ناظر') — myclass</title>
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
     <style>
         body { background: #f4f6f9; }
         .navbar-manager { background: #198754; padding: 15px 0; }

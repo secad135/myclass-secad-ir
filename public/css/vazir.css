@@ -1,0 +1,126 @@
+/* ============================================================
+   فونت فارسی وزیرمتن (Vazirmatn) — میزبانی محلی (بدون CDN)
+   مجوز: SIL Open Font License 1.1 — public/css/fonts/OFL.txt
+   ============================================================ */
+
+@font-face {
+    font-family: 'Vazir';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('fonts/vazir-Regular.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Vazir';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('fonts/vazir-Medium.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Vazir';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('fonts/vazir-SemiBold.woff2') format('woff2');
+}
+
+@font-face {
+    font-family: 'Vazir';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('fonts/vazir-Bold.woff2') format('woff2');
+}
+
+:root {
+    --font-fa: 'Vazir', 'Vazirmatn', Tahoma, Arial, sans-serif;
+}
+
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    font-family: var(--font-fa);
+    font-size: 1rem;
+    line-height: 1.75;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+    font-family: var(--font-fa);
+    font-weight: 700;
+    line-height: 1.5;
+    overflow-wrap: break-word;
+}
+
+/* تیترها و عنوان‌های شاخص کمی برجسته‌تر */
+.card-title,
+.modal-title,
+.page-title,
+.section-title,
+.topbar-title,
+.panel-title {
+    font-weight: 700;
+    overflow-wrap: break-word;
+}
+
+/* ============================================================
+   موبایل: خوانایی بهتر بدون به‌هم‌ریختن ساختار
+   ============================================================ */
+@media (max-width: 991.98px) {
+    body {
+        /* کمی بزرگ‌تر از حالت پیش‌فرض، اما نه آن‌قدر بزرگ که چیدمان بشکند */
+        font-size: 1.0625rem;
+        line-height: 1.85;
+    }
+
+    h4,
+    .h4 {
+        font-size: 1.55rem;
+    }
+
+    h5,
+    .h5 {
+        font-size: 1.3rem;
+    }
+
+    h6,
+    .h6 {
+        font-size: 1.1rem;
+    }
+
+    .card-title,
+    .modal-title,
+    .page-title,
+    .section-title,
+    .topbar-title {
+        font-size: 1.1em;
+        font-weight: 700;
+    }
+
+    /* جلوگیری از سرریز متن‌های طولانی در عرض کم */
+    p,
+    li,
+    td,
+    th,
+    label,
+    .alert,
+    .badge {
+        overflow-wrap: break-word;
+    }
+}

@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>تأیید رمز عبور — MyClass</title>
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
     <style>
-        body { background: #f4f6f9; font-family: Tahoma, Arial, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 20px; }
+        body { background: #f4f6f9; font-family: 'Vazir', Tahoma, Arial, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 20px; }
         .auth-card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; border-top: 5px solid #0d6efd; width: 100%; max-width: 420px; }
         .brand-link { display: block; text-align: center; font-size: 1.5rem; font-weight: bold; color: #0d6efd; text-decoration: none; margin-bottom: 20px; }
     </style>

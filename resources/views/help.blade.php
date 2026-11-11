@@ -6,10 +6,11 @@
     <title>راهنمای ورود به سامانه — myclass</title>
     <!-- استفاده از فایل بوت‌استرپ لوکال که قبلاً دانلود کردیم -->
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
     <style>
         body {
             background: #f4f6f9;
-            font-family: Tahoma, Arial, sans-serif;
+            font-family: 'Vazir', Tahoma, Arial, sans-serif;
             padding-bottom: 50px;
         }
         .help-container {

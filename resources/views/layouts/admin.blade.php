@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'پنل مدیریت') — myclass</title>
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
     <link href="{{ asset('css/fonts/fira-code.css') }}" rel="stylesheet">
     <link rel="stylesheet" href="{{ asset('css/jalalidatepicker.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/prism-tomorrow.min.css') }}">
