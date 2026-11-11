@@ -4,6 +4,19 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
+use Dotenv\Dotenv;
+
+// ۱. بارگذاری فایل پایه .env
+$dotenv = Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->safeLoad();
+
+// ۲. بررسی محیط و بارگذاری فایل اختصاصی (مثلاً .env.local یا .env.production)
+$env = $_ENV['APP_ENV'] ?? 'production';
+$envFile = '.env.' . $env;
+
+if (file_exists(__DIR__ . '/../' . $envFile)) {
+    Dotenv::createImmutable(__DIR__ . '/..', $envFile)->load();
+}
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(

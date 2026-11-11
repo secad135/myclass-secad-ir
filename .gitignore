@@ -1,49 +1,61 @@
-*.log
-.DS_Store
+# =========================================
+# تنظیمات محیطی و فایل‌های حساس (بسیار مهم)
+# =========================================
 .env
+.env.*
+!.env.example
 .env.backup
 .env.production
-.phpactor.json
-.phpunit.result.cache
-/.codex
-/.cursor/
-/.idea
-/.nova
-/.phpunit.cache
-/.vscode
-/.zed
 /auth.json
+
+# =========================================
+# پکیج‌ها و فایل‌های کامپایل شده (حجیم)
+# =========================================
+/vendor
 /node_modules
 /public/build
-/public/fonts-manifest.dev.json
 /public/hot
 /public/storage
+/public/fonts-manifest.dev.json
+
+# =========================================
+# کلیدها و فایل‌های امنیتی لاراول
+# =========================================
 /storage/*.key
 /storage/pail
-/vendor
+
+# =========================================
+# لاگ‌ها و کش‌ها
+# =========================================
+*.log
+npm-debug.log
+yarn-error.log
+.phpunit.result.cache
+/.phpunit.cache
+.phpactor.json
+
+# =========================================
+# فایل‌های تنظیمات ادیتورها و ابزارهای توسعه
+# =========================================
+/.idea
+/.vscode
+/.fleet
+/.nova
+/.zed
+/.cursor
+/.codex
 _ide_helper.php
 Homestead.json
 Homestead.yaml
+
+# =========================================
+# فایل‌های سیستمی و سیستم‌عامل
+# =========================================
+.DS_Store
 Thumbs.db
-*.zip
-vendor/
-node_modules/
-/vendor
-/node_modules
-/public/build
-/public/hot
-/public/storage
-/storage/*.key
-.env
-.env.backup
-.env.production
-.phpunit.result.cache
-Homestead.json
-Homestead.yaml
-npm-debug.log
-yarn-error.log
-/.fleet
-/.idea
-/.vscode
+
+# =========================================
+# فایل‌های پشتیبان، دیتابیس و آرشیوها (بسیار مهم برای گیت‌هاب عمومی)
+# =========================================
 *.zip
 *.sql
