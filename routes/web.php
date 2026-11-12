@@ -190,6 +190,25 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         Route::delete('exercises/{exercise}', [\App\Http\Controllers\Teacher\ExerciseController::class, 'destroy'])->name('exercises.destroy');
         Route::get('exercises/{exercise}/submissions', [\App\Http\Controllers\Teacher\ExerciseController::class, 'submissions'])->name('exercises.submissions');
         Route::post('exercises/{exercise}/submissions/{submission}/grade', [\App\Http\Controllers\Teacher\ExerciseController::class, 'grade'])->name('exercises.grade');
+
+        // مباحث معلم
+        Route::get('topics', [\App\Http\Controllers\Teacher\TopicController::class, 'index'])->name('topics.index');
+        Route::get('topics/create', [\App\Http\Controllers\Teacher\TopicController::class, 'create'])->name('topics.create');
+        Route::post('topics', [\App\Http\Controllers\Teacher\TopicController::class, 'store'])->name('topics.store');
+        Route::get('topics/{topic}/edit', [\App\Http\Controllers\Teacher\TopicController::class, 'edit'])->name('topics.edit');
+        Route::put('topics/{topic}', [\App\Http\Controllers\Teacher\TopicController::class, 'update'])->name('topics.update');
+        Route::delete('topics/{topic}', [\App\Http\Controllers\Teacher\TopicController::class, 'destroy'])->name('topics.destroy');
+
+        // بانک سوالات معلم
+        Route::get('questions', [\App\Http\Controllers\Teacher\QuestionController::class, 'index'])->name('questions.index');
+        Route::get('questions/create', [\App\Http\Controllers\Teacher\QuestionController::class, 'create'])->name('questions.create');
+        Route::post('questions', [\App\Http\Controllers\Teacher\QuestionController::class, 'store'])->name('questions.store');
+        Route::get('questions/import', [\App\Http\Controllers\Teacher\QuestionController::class, 'importForm'])->name('questions.import');
+        Route::post('questions/import', [\App\Http\Controllers\Teacher\QuestionController::class, 'import'])->name('questions.import.store');
+        Route::get('questions/template', [\App\Http\Controllers\Teacher\QuestionController::class, 'downloadTemplate'])->name('questions.template');
+        Route::get('questions/{question}/edit', [\App\Http\Controllers\Teacher\QuestionController::class, 'edit'])->name('questions.edit');
+        Route::put('questions/{question}', [\App\Http\Controllers\Teacher\QuestionController::class, 'update'])->name('questions.update');
+        Route::delete('questions/{question}', [\App\Http\Controllers\Teacher\QuestionController::class, 'destroy'])->name('questions.destroy');
     });
 
 // ==================== پنل دانش‌آموز ====================

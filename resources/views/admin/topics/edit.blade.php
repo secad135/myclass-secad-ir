@@ -1,4 +1,9 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
 @section('title', 'ویرایش مبحث')
 
@@ -12,7 +17,7 @@
         </div>
     @endif
 
-    <form action="{{ route('admin.topics.update', $topic) }}" method="POST" class="bg-white p-4 rounded">
+    <form action="{{ route($panelPrefix . '.topics.update', $topic) }}" method="POST" class="bg-white p-4 rounded">
         @csrf
         @method('PUT')
         <div class="mb-3">
@@ -32,7 +37,7 @@
             <textarea name="description" class="form-control" rows="2">{{ old('description', $topic->description) }}</textarea>
         </div>
         <button class="btn btn-success">ذخیره تغییرات</button>
-        <a href="{{ route('admin.topics.index') }}" class="btn btn-secondary">انصراف</a>
+        <a href="{{ route($panelPrefix . '.topics.index') }}" class="btn btn-secondary">انصراف</a>
     </form>
 
 @endsection

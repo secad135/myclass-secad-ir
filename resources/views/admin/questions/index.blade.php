@@ -1,13 +1,18 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
-@section('title', 'بانک سوالات')
+@section('title', $isTeacher ? 'بانک سوالات من' : 'بانک سوالات')
 
 @section('content')
 
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0">بانک سوالات</h4>
-    <a href="{{ route('admin.questions.create', ['topic_id' => $topicId]) }}" class="btn btn-primary">➕ افزودن سوال</a>
-    <a href="{{ route('admin.questions.import') }}" class="btn btn-outline-success">📥 ورود گروهی (JSON)</a>
+    <h4 class="mb-0">{{ $isTeacher ? 'بانک سوالات من' : 'بانک سوالات' }}</h4>
+    <a href="{{ route($panelPrefix . '.questions.create', ['topic_id' => $topicId]) }}" class="btn btn-primary">➕ افزودن سوال</a>
+    <a href="{{ route($panelPrefix . '.questions.import') }}" class="btn btn-outline-success">📥 ورود گروهی (JSON)</a>
 
 </div>
 
@@ -42,8 +47,8 @@
             @endif
         </div>
         <div>
-            <a href="{{ route('admin.questions.edit', $question) }}" class="btn btn-sm btn-warning">ویرایش</a>
-            <form action="{{ route('admin.questions.destroy', $question) }}" method="POST" class="d-inline">
+            <a href="{{ route($panelPrefix . '.questions.edit', $question) }}" class="btn btn-sm btn-warning">ویرایش</a>
+            <form action="{{ route($panelPrefix . '.questions.destroy', $question) }}" method="POST" class="d-inline">
                 @csrf
                 @method('DELETE')
                 <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟')">حذف</button>

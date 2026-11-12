@@ -1,4 +1,9 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
 @section('title', 'ورود گروهی سوالات')
 
@@ -7,10 +12,10 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h4 class="mb-0">ورود گروهی سوالات (JSON)</h4>
         <div class="d-flex gap-2">
-            <a href="{{ route('admin.questions.template') }}" class="btn btn-outline-success">
+            <a href="{{ route($panelPrefix . '.questions.template') }}" class="btn btn-outline-success">
                 📥 دانلود فایل نمونه
             </a>
-            <a href="{{ route('admin.questions.index') }}" class="btn btn-secondary">بازگشت</a>
+            <a href="{{ route($panelPrefix . '.questions.index') }}" class="btn btn-secondary">بازگشت</a>
         </div>
     </div>
 
@@ -37,7 +42,7 @@
         اگر خطایی رخ دهد، هیچ سوالی ذخیره نمی‌شود (همه یا هیچ).
     </div>
 
-    <form action="{{ route('admin.questions.import.store') }}" method="POST" enctype="multipart/form-data" class="bg-white p-4 rounded">
+    <form action="{{ route($panelPrefix . '.questions.import.store') }}" method="POST" enctype="multipart/form-data" class="bg-white p-4 rounded">
         @csrf
 
         <div class="mb-3">

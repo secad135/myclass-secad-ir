@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ClassSubject;
 use App\Models\Exercise;
 use App\Models\Exam;
+use App\Models\Topic;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -34,6 +35,34 @@ class BaseController extends Controller
     protected function ownSubjectIds(): array
     {
         return $this->ownClassSubjectQuery()->pluck('subject_id')->unique()->values()->all();
+    }
+
+    protected function ownTopicIds(): array
+    {
+        return Topic::whereIn('subject_id', $this->ownSubjectIds())->pluck('id')->all();
+    }
+
+    protected function ownsSubject(int $subjectId): bool
+    {
+        return in_array($subjectId, array_map('intval', $this->ownSubjectIds()), true);
+    }
+
+    protected function assertOwnsSubject(int $subjectId): void
+    {
+        abort_unless($this->ownsSubject($subjectId), 403);
+    }
+
+    protected function assertOwnsTopic(Topic $topic): void
+    {
+        $this->assertOwnsSubject((int) $topic->subject_id);
+    }
+
+    protected function assertOwnsTopicId(int $topicId): void
+    {
+        abort_unless(
+            in_array($topicId, array_map('intval', $this->ownTopicIds()), true),
+            403
+        );
     }
 
     protected function ownClassSubjectIdsForOwnClasses(): array

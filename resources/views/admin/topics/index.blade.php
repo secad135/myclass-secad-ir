@@ -1,12 +1,17 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
-@section('title', 'مباحث')
+@section('title', $isTeacher ? 'مباحث من' : 'مباحث')
 
 @section('content')
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">مباحث</h4>
-        <a href="{{ route('admin.topics.create', ['subject_id' => $subjectId]) }}" class="btn btn-primary">➕ افزودن مبحث</a>
+        <h4 class="mb-0">{{ $isTeacher ? 'مباحث من' : 'مباحث' }}</h4>
+        <a href="{{ route($panelPrefix . '.topics.create', ['subject_id' => $subjectId]) }}" class="btn btn-primary">➕ افزودن مبحث</a>
     </div>
 
     <div class="card mb-3">
@@ -44,13 +49,13 @@
                     <td><small>{{ $topic->subject?->name ?? '—' }}</small></td>
                     <td><small class="text-muted">{{ Str::limit($topic->description, 60) }}</small></td>
                     <td class="text-center">
-                        <a href="{{ route('admin.questions.index', ['topic_id' => $topic->id]) }}" class="badge bg-info text-decoration-none">
+                        <a href="{{ route($panelPrefix . '.questions.index', ['topic_id' => $topic->id]) }}" class="badge bg-info text-decoration-none">
                             {{ $topic->questions_count }} سوال
                         </a>
                     </td>
                     <td>
-                        <a href="{{ route('admin.topics.edit', $topic) }}" class="btn btn-sm btn-warning">ویرایش</a>
-                        <form action="{{ route('admin.topics.destroy', $topic) }}" method="POST" class="d-inline">
+                        <a href="{{ route($panelPrefix . '.topics.edit', $topic) }}" class="btn btn-sm btn-warning">ویرایش</a>
+                        <form action="{{ route($panelPrefix . '.topics.destroy', $topic) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
                             <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟ سوالات این مبحث هم حذف می‌شوند.')">حذف</button>
