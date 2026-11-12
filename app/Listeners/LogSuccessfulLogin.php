@@ -15,5 +15,7 @@ class LogSuccessfulLogin
             'ip_address' => request()->ip(),
             'user_agent' => request()->userAgent(), // اطلاعات مرورگر و سیستم‌عامل
         ]);
+
+        \App\Services\ActivityLogger::log($event->user, 'login', 'وارد سامانه شد.');
     }
 }

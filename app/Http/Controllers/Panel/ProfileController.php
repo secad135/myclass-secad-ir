@@ -73,6 +73,8 @@ class ProfileController extends Controller
             'initial_password'     => null,
         ]);
 
+        \App\Services\ActivityLogger::log($user, 'password_change', 'رمز عبور خود را تغییر داد.');
+
         if ($wasForcedChange) {
             return redirect()->route('panel.dashboard')
                 ->with('success', 'رمز شما تغییر کرد. به پنل خوش آمدید!');

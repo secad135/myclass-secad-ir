@@ -1,0 +1,22 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\ActivityLog;
+use App\Models\User;
+
+class ActivityLogger
+{
+    public static function log(?User $user, string $action, string $description): void
+    {
+        if (!$user || !$user->is_student) {
+            return;
+        }
+
+        ActivityLog::create([
+            'user_id'     => $user->id,
+            'action'      => $action,
+            'description' => $description,
+        ]);
+    }
+}

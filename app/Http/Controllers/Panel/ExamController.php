@@ -61,6 +61,13 @@ class ExamController extends Controller
 
         try {
             $attempt = $this->service->createAttempt($exam, $student);
+
+            \App\Services\ActivityLogger::log(
+                $student,
+                'exam_start',
+                'آزمون «' . $exam->title . '» را آغاز کرد.'
+            );
+
             return redirect()->route('panel.exams.show', $attempt);
         } catch (\Exception $e) {
             return redirect()->route('panel.exams.index')->with('error', $e->getMessage());
@@ -110,6 +117,12 @@ class ExamController extends Controller
 
         $answers = $request->input('answers', []);
         $attempt = $this->service->submitAttempt($attempt, $answers);
+
+        \App\Services\ActivityLogger::log(
+            auth()->user(),
+            'exam_submit',
+            'آزمون «' . $attempt->exam->title . '» را ثبت کرد — نمره: ' . $attempt->score
+        );
 
         return redirect()->route('panel.exams.result', $attempt)
             ->with('success', 'آزمون شما با موفقیت ثبت شد.');

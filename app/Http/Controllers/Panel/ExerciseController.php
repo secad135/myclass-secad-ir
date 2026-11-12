@@ -104,6 +104,12 @@ class ExerciseController extends Controller
             ]
         );
 
+        \App\Services\ActivityLogger::log(
+            $student,
+            'exercise_submit',
+            'پاسخ تمرین «' . $exercise->title . '» را ارسال کرد.'
+        );
+
         return redirect()->route('panel.exercises.show', $exercise)
             ->with('success', 'پاسخ شما با موفقیت ثبت شد.');
     }
