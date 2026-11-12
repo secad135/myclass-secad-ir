@@ -240,14 +240,14 @@ ALTER TABLE `exercises`
 **commit:** `feat(teacher): add admin teacher CRUD`
 
 ### ۴.۶ تخصیص معلم به درس
-- [ ] route `PUT admin/classes/{class}/subjects/{classSubject}/teacher`
-- [ ] `Admin\SchoolClassController@updateSubjectTeacher`
-- [ ] اعتبارسنجی: `teacher_id` باید متعلق به کاربر `is_teacher` باشد
-- [ ] در `admin/classes/show.blade.php`: ستون «معلم» و dropdown برای هر درس
-- [ ] در فرم افزودن درس هم dropdown اختیاری معلم
-- [ ] در `classes/create` و `classes/edit`: dropdown معلم کلاس فقط `User::teachers()`؛ اگر مقدار فعلی غیرمعلم است، به‌صورت گزینه «کاربر فعلی (غیرمعلم)» نگه داشته شود تا پاک نشود
-- [ ] نمایش نام معلم هر درس در جدول
-- [ ] تست: تخصیص/تغییر/حذف معلم درس
+- [x] route `PUT admin/classes/{class}/subjects/{classSubject}/teacher`
+- [x] `Admin\SchoolClassController@updateSubjectTeacher`
+- [x] اعتبارسنجی: `teacher_id` باید متعلق به کاربر `is_teacher` باشد
+- [x] در `admin/classes/show.blade.php`: ستون «معلم» و dropdown برای هر درس
+- [x] در فرم افزودن درس هم dropdown اختیاری معلم
+- [x] در `classes/create` و `classes/edit`: dropdown معلم کلاس فقط `User::teachers()`؛ اگر مقدار فعلی غیرمعلم است، به‌صورت گزینه «کاربر فعلی (غیرمعلم)» نگه داشته شود تا پاک نشود
+- [x] نمایش نام معلم هر درس در جدول
+- [x] تست: تخصیص/تغییر/حذف معلم درس
 
 **commit:** `feat(teacher): assign teachers to class subjects`
 
@@ -471,7 +471,7 @@ ALTER TABLE `exercises`
 | migrationها و مدل‌ها | ⬜ | - | |
 | middleware و ورود معلم | ✅ | - | |
 | CRUD معلم در ادمین | ✅ | - | |
-| تخصیص معلم به درس | ⬜ | - | |
+| تخصیص معلم به درس | ✅ | - | |
 | layout و اسکلت پنل معلم | ⬜ | - | |
 | داشبورد و پروفایل معلم | ⬜ | - | |
 | کلاس‌ها و دانش‌آموزان معلم | ⬜ | - | |

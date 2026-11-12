@@ -175,6 +175,7 @@
                 <th>#</th>
                 <th>نام درس</th>
                 <th>نوع</th>
+                <th style="min-width: 190px;">معلم</th>
                 <th>جلسه در روز</th>
                 <th style="min-width: 280px;">روزهای هفته</th>
                 <th>عملیات</th>
@@ -194,6 +195,19 @@
                         @else
                             <span class="badge bg-secondary">عادی</span>
                         @endif
+                    </td>
+                    <td>
+                        <form action="{{ route('admin.classes.subjects.teacher.update', [$class, $cs]) }}" method="POST" class="d-flex gap-1">
+                            @csrf
+                            @method('PUT')
+                            <select name="teacher_id" class="form-select form-select-sm">
+                                <option value="">— بدون معلم —</option>
+                                @foreach($teachers as $teacher)
+                                    <option value="{{ $teacher->id }}" @selected($cs->teacher_id == $teacher->id)>{{ $teacher->name }}</option>
+                                @endforeach
+                            </select>
+                            <button class="btn btn-sm btn-outline-primary" title="ثبت معلم">ثبت</button>
+                        </form>
                     </td>
                     <td>{{ $cs->subject?->sessions_per_day }}</td>
                     <td>
@@ -242,7 +256,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="6" class="text-center text-muted">هیچ درسی به این کلاس اضافه نشده است.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted">هیچ درسی به این کلاس اضافه نشده است.</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -267,6 +281,12 @@
                 @for($i = 1; $i <= 4; $i++)
                     <option value="{{ $i }}" @selected($i === 1)>شروع از زنگ {{ $i }}</option>
                 @endfor
+            </select>
+            <select name="teacher_id" class="form-select" style="max-width: 220px;">
+                <option value="">— معلم (اختیاری) —</option>
+                @foreach($teachers as $teacher)
+                    <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
+                @endforeach
             </select>
             <button class="btn btn-primary">افزودن</button>
         </form>

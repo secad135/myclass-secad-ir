@@ -76,6 +76,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('classes/{class}/subjects', [SchoolClassController::class, 'addSubject'])->name('classes.subjects.add');
     Route::delete('classes/{class}/subjects/{classSubject}', [SchoolClassController::class, 'removeSubject'])->name('classes.subjects.remove');
     Route::put('classes/{class}/subjects/{classSubject}/days', [SchoolClassController::class, 'updateSubjectDays'])->name('classes.subjects.days.update');
+    Route::put('classes/{class}/subjects/{classSubject}/teacher', [SchoolClassController::class, 'updateSubjectTeacher'])->name('classes.subjects.teacher.update');
     Route::get('classes/{class}/report', [SchoolClassController::class, 'report'])->name('classes.report');
     Route::get('classes/{class}/full-report', [SchoolClassController::class, 'reportFull'])->name('classes.full-report');
     Route::resource('classes', SchoolClassController::class);

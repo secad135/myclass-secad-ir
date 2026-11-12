@@ -51,7 +51,7 @@
             <select name="teacher_id" class="form-select">
                 <option value="">— بدون معلم —</option>
                 @foreach($teachers as $teacher)
-                    <option value="{{ $teacher->id }}" {{ old('teacher_id', $class->teacher_id) == $teacher->id ? 'selected' : '' }}>{{ $teacher->name }} ({{ $teacher->email }})</option>
+                    <option value="{{ $teacher->id }}" {{ old('teacher_id', $class->teacher_id) == $teacher->id ? 'selected' : '' }}>{{ $teacher->name }} ({{ $teacher->email }}) @if(!$teacher->is_teacher) — کاربر فعلی (غیرمعلم) @endif</option>
                 @endforeach
             </select>
         </div>

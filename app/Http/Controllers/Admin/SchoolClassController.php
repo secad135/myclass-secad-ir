@@ -9,6 +9,7 @@ use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use App\Models\ClassSubject;
 use App\Models\Subject;
 use App\Services\ExamService;
@@ -79,7 +80,7 @@ class SchoolClassController extends Controller
         $schools  = School::orderBy('name')->get();
         $years    = AcademicYear::orderByDesc('is_current')->orderByDesc('title')->get();
         $grades   = Grade::orderBy('name')->get();
-        $teachers = User::orderBy('name')->get();
+        $teachers = User::teachers()->orderBy('name')->get();
 
         return view('admin.classes.create', compact('schools', 'years', 'grades', 'teachers'));
     }
@@ -122,7 +123,9 @@ class SchoolClassController extends Controller
             ->orderBy('name')
             ->get();
 
-        return view('admin.classes.show', compact('class', 'availableStudents', 'availableSubjects'));
+        $teachers = User::teachers()->orderBy('name')->get();
+
+        return view('admin.classes.show', compact('class', 'availableStudents', 'availableSubjects', 'teachers'));
     }
 
     public function edit(SchoolClass $class)
@@ -130,7 +133,10 @@ class SchoolClassController extends Controller
         $schools  = School::orderBy('name')->get();
         $years    = AcademicYear::orderByDesc('is_current')->orderByDesc('title')->get();
         $grades   = Grade::orderBy('name')->get();
-        $teachers = User::orderBy('name')->get();
+        $teachers = User::teachers()->orderBy('name')->get();
+        if ($class->teacher && !$class->teacher->is_teacher) {
+            $teachers->prepend($class->teacher);
+        }
 
         return view('admin.classes.edit', compact('class', 'schools', 'years', 'grades', 'teachers'));
     }
@@ -192,6 +198,10 @@ class SchoolClassController extends Controller
         $request->validate([
             'subject_id'           => 'required|exists:subjects,id',
             'default_start_period' => 'required|integer|between:1,4',
+            'teacher_id'           => [
+                'nullable',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('is_teacher', true)),
+            ],
         ]);
 
         $subject = Subject::findOrFail($request->subject_id);
@@ -201,6 +211,7 @@ class SchoolClassController extends Controller
             [
                 'days_of_week'         => $subject->default_days,
                 'default_start_period' => (int) $request->default_start_period,
+                'teacher_id'           => $request->teacher_id,
             ]
         );
 
@@ -233,6 +244,25 @@ class SchoolClassController extends Controller
 
         return redirect()->route('admin.classes.show', $class)
             ->with('success', 'تنظیمات درس به‌روزرسانی شد.');
+    }
+
+    public function updateSubjectTeacher(Request $request, SchoolClass $class, ClassSubject $classSubject)
+    {
+        abort_unless($classSubject->school_class_id === $class->id, 404);
+
+        $request->validate([
+            'teacher_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where(fn ($q) => $q->where('is_teacher', true)),
+            ],
+        ], [
+            'teacher_id.exists' => 'معلم انتخاب‌شده معتبر نیست.',
+        ]);
+
+        $classSubject->update(['teacher_id' => $request->teacher_id]);
+
+        return redirect()->route('admin.classes.show', $class)
+            ->with('success', 'معلم درس به‌روزرسانی شد.');
     }
     public function reportFull(Request $request, SchoolClass $class)
     {
