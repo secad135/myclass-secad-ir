@@ -208,13 +208,13 @@ ALTER TABLE `exercises`
 ## ۶. فاز ۱ — پایه، حساب معلم، تخصیص، پنل، حضور/امتیاز
 
 ### ۱.۶ migration و مدل‌ها
-- [ ] migration `class_subjects.teacher_id`
-- [ ] migration `exams.created_by` و `exercises.created_by`
-- [ ] `User`: روابط `classSubjectsAsTeacher`, `homeroomClasses`, `createdExams`, `createdExercises`
-- [ ] `ClassSubject`: `teacher_id` در fillable + `teacher()` + `scopeForTeacher`
-- [ ] `Exam` / `Exercise`: `created_by` در fillable + `creator()`
-- [ ] `SchoolClass`: `scopeForTeacher` در صورت نیاز
-- [ ] `php artisan migrate` لوکال + تست ستون‌ها
+- [x] migration `class_subjects.teacher_id`
+- [x] migration `exams.created_by` و `exercises.created_by`
+- [x] `User`: روابط `classSubjectsAsTeacher`, `homeroomClasses`, `createdExams`, `createdExercises`
+- [x] `ClassSubject`: `teacher_id` در fillable + `teacher()` + `scopeForTeacher`
+- [x] `Exam` / `Exercise`: `created_by` در fillable + `creator()`
+- [x] `SchoolClass`: `scopeForTeacher` در صورت نیاز
+- [x] `php artisan migrate` لوکال + تست ستون‌ها
 
 **commit:** `feat(teacher): add teacher schema and model relations`
 

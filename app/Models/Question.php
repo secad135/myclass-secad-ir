@@ -30,6 +30,13 @@ class Question extends Model
         return $query->where('is_active', true);
     }
 
+    public function scopeForSubjects($query, array $subjectIds)
+    {
+        return $query->whereHas('topic', function ($q) use ($subjectIds) {
+            $q->whereIn('subject_id', $subjectIds);
+        });
+    }
+
     public function difficultyLabel(): string
     {
         return match($this->difficulty) {

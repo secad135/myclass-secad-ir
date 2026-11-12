@@ -44,6 +44,26 @@ class User extends Authenticatable
         return $query->where('is_teacher', true);
     }
 
+    public function classSubjectsAsTeacher()
+    {
+        return $this->hasMany(ClassSubject::class, 'teacher_id');
+    }
+
+    public function homeroomClasses()
+    {
+        return $this->hasMany(SchoolClass::class, 'teacher_id');
+    }
+
+    public function createdExams()
+    {
+        return $this->hasMany(Exam::class, 'created_by');
+    }
+
+    public function createdExercises()
+    {
+        return $this->hasMany(Exercise::class, 'created_by');
+    }
+
     public function school()
     {
         return $this->belongsTo(School::class);

@@ -51,6 +51,13 @@ class SchoolClass extends Model
         )->withPivot('status', 'enrolled_at', 'notes')->withTimestamps();
     }
 
+    public function scopeForTeacher($query, int $teacherId)
+    {
+        return $query->whereHas('classSubjects', function ($q) use ($teacherId) {
+            $q->where('teacher_id', $teacherId);
+        });
+    }
+
     // --- روابط جدید (که جا افتاده بودند) ---
 
     public function classSubjects()

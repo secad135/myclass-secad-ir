@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Exam extends Model
 {
     protected $fillable = [
-        'class_subject_id', 'title', 'description', 'question_count',
+        'class_subject_id', 'created_by', 'title', 'description', 'question_count',
         'duration_minutes', 'start_at', 'end_at', 'shuffle_options',
         'show_result_immediately', 'max_attempts', 'is_active',
     ];
@@ -23,6 +23,11 @@ class Exam extends Model
     public function classSubject()
     {
         return $this->belongsTo(ClassSubject::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function topics()

@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class ClassSubject extends Model
 {
     protected $fillable = [
-        'school_class_id', 'subject_id',
+        'school_class_id', 'subject_id', 'teacher_id',
         'days_of_week', 'start_date', 'end_date',
         'default_start_period',
     ];
@@ -27,6 +27,16 @@ class ClassSubject extends Model
     public function subject()
     {
         return $this->belongsTo(Subject::class);
+    }
+
+    public function teacher()
+    {
+        return $this->belongsTo(User::class, 'teacher_id');
+    }
+
+    public function scopeForTeacher($query, int $teacherId)
+    {
+        return $query->where('teacher_id', $teacherId);
     }
 
     public function exams()

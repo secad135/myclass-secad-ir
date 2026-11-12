@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Exercise extends Model
 {
     protected $fillable = [
-        'class_subject_id', 'title', 'description', 'attachment_path',
+        'class_subject_id', 'created_by', 'title', 'description', 'attachment_path',
         'deadline_at', 'max_score', 'allow_late_submission', 'is_active',
         'requires_code', 'allow_file_upload',
     ];
@@ -24,6 +24,11 @@ class Exercise extends Model
     public function classSubject()
     {
         return $this->belongsTo(ClassSubject::class);
+    }
+
+    public function creator()
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     public function submissions()

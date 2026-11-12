@@ -17,6 +17,11 @@ class Topic extends Model
     {
         return $this->hasMany(Question::class);
     }
+
+    public function scopeForSubjects($query, array $subjectIds)
+    {
+        return $query->whereIn('subject_id', $subjectIds);
+    }
     public function topics()
     {
         return $this->hasMany(Topic::class);
