@@ -181,4 +181,52 @@
         </div>
     </div>
 
+    {{-- آخرین فعالیت دانش‌آموزان --}}
+    <h5 class="fw-bold mb-3 text-secondary mt-4">📊 آخرین فعالیت دانش‌آموزان (۷ روز اخیر)</h5>
+
+    @if($recentActivities->isEmpty())
+        <div class="alert alert-light border text-center py-3">
+            <p class="text-muted mb-0 small">در ۷ روز اخیر هیچ فعالیتی از دانش‌آموزان ثبت نشده است.</p>
+        </div>
+    @else
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40px;">#</th>
+                            <th style="width: 180px;">دانش‌آموز</th>
+                            <th>فعالیت</th>
+                            <th style="width: 150px;">زمان</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($recentActivities as $i => $log)
+                            <tr>
+                                <td class="text-muted">{{ $i + 1 }}</td>
+                                <td>
+                                    <strong>{{ $log->user?->name ?? 'کاربر حذف شده' }}</strong>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{{ $log->action === 'exam_submit' ? 'success' : ($log->action === 'exercise_submit' ? 'primary' : ($log->action === 'password_change' ? 'warning text-dark' : 'secondary')) }} me-1">
+                                        {{ $log->description }}
+                                    </span>
+                                </td>
+                                <td class="text-muted small">
+                                    @if($log->created_at->isToday())
+                                        امروز {{ jdate($log->created_at, 'HH:mm') }}
+                                    @elseif($log->created_at->isYesterday())
+                                        دیروز {{ jdate($log->created_at, 'HH:mm') }}
+                                    @else
+                                        {{ jdate($log->created_at, 'yyyy/MM/dd HH:mm') }}
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    @endif
+
 @endsection

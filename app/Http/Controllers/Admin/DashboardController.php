@@ -62,9 +62,20 @@ class DashboardController extends Controller
             ->whereHas('exercise', fn($q) => $q->where('is_active', true))
             ->count();
 
+        // پاکسازی لاگ‌های قدیمی‌تر از ۷ روز (خودکار در هر بار لود داشبورد)
+        \App\Models\ActivityLog::cleanup(7);
+
+        // آخرین ۳۰ فعالیت دانش‌آموزان در ۷ روز اخیر
+        $recentActivities = \App\Models\ActivityLog::with('user')
+            ->recent(7)
+            ->orderByDesc('created_at')
+            ->limit(30)
+            ->get();
+
         return view('admin.dashboard', compact(
-            'stats', 'currentYear', 'classSubjects', 
-            'recentExams', 'recentExercises', 'pendingSubmissionsCount'
+            'stats', 'currentYear', 'classSubjects',
+            'recentExams', 'recentExercises', 'pendingSubmissionsCount',
+            'recentActivities'
         ));
     }
 }
