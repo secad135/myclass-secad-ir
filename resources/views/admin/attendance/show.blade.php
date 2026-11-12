@@ -1,4 +1,9 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
 @section('title', 'حضور و غیاب — ' . $classSubject->subject->name)
 
@@ -136,15 +141,15 @@
                 تاریخ: <strong>{{ jdate($date) }}</strong> <small>({{ $date }})</small>
             </small>
         </div>
-        <a href="{{ route('admin.classes.show', $classSubject->schoolClass) }}" class="btn btn-secondary">بازگشت</a>
+        <a href="{{ route($panelPrefix . '.classes.show', $classSubject->schoolClass) }}" class="btn btn-secondary">بازگشت</a>
     </div>
 
-    <form action="{{ route('admin.attendance.show', $classSubject) }}" method="GET" class="mb-3" id="dateForm">
+    <form action="{{ route($panelPrefix . '.attendance.show', $classSubject) }}" method="GET" class="mb-3" id="dateForm">
         <div class="d-flex gap-2 align-items-center flex-wrap date-form-row">
             <label class="form-label mb-0">تاریخ:</label>
             <input type="text" id="jalaliDateInput" name="date" class="form-control" value="{{ jdate($date) }}" data-jdp data-jdp-only-date placeholder="1403/08/10" style="max-width: 180px;" dir="ltr" autocomplete="off">
             <button type="submit" class="btn btn-outline-primary">برو</button>
-            <a href="{{ route('admin.attendance.show', $classSubject) }}" class="btn btn-outline-secondary">امروز</a>
+            <a href="{{ route($panelPrefix . '.attendance.show', $classSubject) }}" class="btn btn-outline-secondary">امروز</a>
             <span class="text-muted small">({{ jdate($date, 'EEEE d MMMM yyyy') }})</span>
         </div>
     </form>
@@ -181,7 +186,7 @@
                                     @if($isCurrent)
                                         <span class="badge bg-primary">در حال نمایش</span>
                                     @else
-                                        <a href="{{ route('admin.attendance.show', ['classSubject' => $classSubject->id, 'date' => $rd->date->format('Y-m-d')]) }}" class="btn btn-sm btn-outline-primary">مشاهده</a>
+                                        <a href="{{ route($panelPrefix . '.attendance.show', ['classSubject' => $classSubject->id, 'date' => $rd->date->format('Y-m-d')]) }}" class="btn btn-sm btn-outline-primary">مشاهده</a>
                                     @endif
                                 </td>
                             </tr>
@@ -196,7 +201,7 @@
         <div class="alert alert-info">
             <h5>روز {{ jdate($date) }} هنوز شروع نشده است.</h5>
             <p>با کلیک روی دکمه زیر، همه دانش‌آموزان به صورت «غایب» در همه جلسات ثبت می‌شوند.</p>
-            <form action="{{ route('admin.attendance.start', $classSubject) }}" method="POST">
+            <form action="{{ route($panelPrefix . '.attendance.start', $classSubject) }}" method="POST">
                 @csrf
                 <input type="hidden" name="date" value="{{ $date }}">
 
@@ -241,7 +246,7 @@
                 به مدت <strong>{{ $day->sessions_count ?? $sessionsCount }} جلسه</strong>
                 برگزار می‌شود.
             </div>
-            <form action="{{ route('admin.attendance.save', $classSubject) }}" method="POST" id="saveForm">
+            <form action="{{ route($panelPrefix . '.attendance.save', $classSubject) }}" method="POST" id="saveForm">
                 @csrf
                 <input type="hidden" name="date" value="{{ $date }}">
 
@@ -267,7 +272,7 @@
                                 <tr>
                                     <td class="student-col">
                                         {{ $student->name }}
-                                        <a href="{{ route('admin.students.show', $student) }}" class="text-decoration-none small" title="وضعیت کلی">📋</a>
+                                        <a href="{{ route($panelPrefix . '.students.show', $student) }}" class="text-decoration-none small" title="وضعیت کلی">📋</a>
                                     </td>
                                     @for($s = 1; $s <= $sessionsCount; $s++)
                                         @php
@@ -304,7 +309,7 @@
             </form>
 
             <div class="action-buttons mb-4">
-                <form action="{{ route('admin.attendance.destroy-day', [$classSubject, $day]) }}" method="POST">
+                <form action="{{ route($panelPrefix . '.attendance.destroy-day', [$classSubject, $day]) }}" method="POST">
                     @csrf
                     @method('DELETE')
                     <button class="btn btn-outline-danger" onclick="return confirm('همه اطلاعات این روز حذف شود؟')">🗑️ حذف این روز</button>
@@ -318,7 +323,7 @@
 
         <h5>امتیازات این روز — {{ jdate($date, 'EEEE d MMMM yyyy') }}</h5>
 
-        <form action="{{ route('admin.attendance.points.add', $classSubject) }}" method="POST" class="row g-2 mb-3 align-items-end points-form-row">
+        <form action="{{ route($panelPrefix . '.attendance.points.add', $classSubject) }}" method="POST" class="row g-2 mb-3 align-items-end points-form-row">
             @csrf
             <input type="hidden" name="date" value="{{ $date }}">
             <div class="col-md-3">
@@ -379,11 +384,13 @@
                             <td><small>{{ $entry->note }}</small></td>
                             <td><small class="text-muted">{{ $entry->createdBy?->name }}</small></td>
                             <td>
-                                <form action="{{ route('admin.attendance.points.delete', [$classSubject, $entry]) }}" method="POST" class="d-inline">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف شود؟')">×</button>
-                                </form>
+                                @if(!$isTeacher || (int) $entry->created_by === (int) auth()->id())
+                                    <form action="{{ route($panelPrefix . '.attendance.points.delete', [$classSubject, $entry]) }}" method="POST" class="d-inline">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button class="btn btn-sm btn-outline-danger" onclick="return confirm('حذف شود؟')">×</button>
+                                    </form>
+                                @endif
                             </td>
                         </tr>
                     @endforeach

@@ -161,6 +161,14 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         // دانش‌آموزان کلاس‌های معلم
         Route::get('students', [\App\Http\Controllers\Teacher\StudentController::class, 'index'])->name('students.index');
         Route::get('students/{student}', [\App\Http\Controllers\Teacher\StudentController::class, 'show'])->name('students.show');
+
+        // حضور/غیاب و امتیاز
+        Route::get('attendance/{classSubject}', [\App\Http\Controllers\Teacher\AttendanceController::class, 'show'])->name('attendance.show');
+        Route::post('attendance/{classSubject}/start', [\App\Http\Controllers\Teacher\AttendanceController::class, 'start'])->name('attendance.start');
+        Route::post('attendance/{classSubject}/save', [\App\Http\Controllers\Teacher\AttendanceController::class, 'save'])->name('attendance.save');
+        Route::delete('attendance/{classSubject}/day/{day}', [\App\Http\Controllers\Teacher\AttendanceController::class, 'destroyDay'])->name('attendance.destroy-day');
+        Route::post('attendance/{classSubject}/points', [\App\Http\Controllers\Teacher\AttendanceController::class, 'addPoint'])->name('attendance.points.add');
+        Route::delete('attendance/{classSubject}/points/{pointEntry}', [\App\Http\Controllers\Teacher\AttendanceController::class, 'deletePoint'])->name('attendance.points.delete');
     });
 
 // ==================== پنل دانش‌آموز ====================

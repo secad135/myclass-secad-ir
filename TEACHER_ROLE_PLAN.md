@@ -285,12 +285,12 @@ ALTER TABLE `exercises`
 **commit:** `feat(teacher): scope classes and students to teacher`
 
 ### ۷.۶ حضور/غیاب و امتیاز
-- [ ] `Teacher\AttendanceController`: show/start/save/destroyDay/points.add/points.delete
-- [ ] بررسی `classSubject.teacher_id === auth()->id()`
-- [ ] حذف امتیاز: فقط امتیازی که `created_by === auth()->id()` است (یا ادمین)
-- [ ] route prefix شرطی در `attendance/show.blade.php`
-- [ ] لاگ فعالیت برای ثبت حضور/امتیاز (بعد از آماده شدن ActivityLogger در فاز ۲ هم قابل انجام است)
-- [ ] تست: ثبت حضور، افزودن امتیاز، حذف امتیاز، دسترسی غیرمجاز
+- [x] `Teacher\AttendanceController`: show/start/save/destroyDay/points.add/points.delete
+- [x] بررسی `classSubject.teacher_id === auth()->id()`
+- [x] حذف امتیاز: فقط امتیازی که `created_by === auth()->id()` است (یا ادمین)
+- [x] route prefix شرطی در `attendance/show.blade.php`
+- [x] لاگ فعالیت برای ثبت حضور/امتیاز (بعد از آماده شدن ActivityLogger در فاز ۲ هم قابل انجام است)
+- [x] تست: ثبت حضور، افزودن امتیاز، حذف امتیاز، دسترسی غیرمجاز
 
 **commit:** `feat(teacher): add attendance and points management`
 
@@ -475,7 +475,7 @@ ALTER TABLE `exercises`
 | layout و اسکلت پنل معلم | ✅ | - | layout معلم + route group + auth/teacher/password.changed |
 | داشبورد و پروفایل معلم | ✅ | - | داشبورد اختصاصی + پروفایل تغییر رمز |
 | کلاس‌ها و دانش‌آموزان معلم | ✅ | - | scope کلاس/دانش‌آموز + فیلتر سرویس گزارش |
-| حضور/غیاب و امتیاز معلم | ⬜ | - | |
+| حضور/غیاب و امتیاز معلم | ✅ | - | فقط درس‌های خود معلم + حذف امتیاز محدود به سازنده |
 | آزمون‌های معلم | ⬜ | - | |
 | تمرین‌های معلم | ⬜ | - | |
 | مباحث و بانک سوالات معلم | ⬜ | - | |
