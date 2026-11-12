@@ -188,7 +188,7 @@
 
         {{-- نوار ابزار - در چاپ دیده نمی‌شود --}}
         <div class="no-print mb-3 d-flex gap-2 align-items-center flex-wrap">
-            <a href="{{ auth()->user()->is_school_manager ? route('manager.classes.report', $class) : route('admin.classes.report', $class) }}" class="btn btn-outline-secondary">
+            <a href="{{ route((auth()->user()->is_teacher ? 'teacher' : (auth()->user()->is_school_manager ? 'manager' : 'admin')) . '.classes.report', $class) }}" class="btn btn-outline-secondary">
                 ← بازگشت به گزارش
             </a>
             <button type="button" class="btn btn-primary" onclick="window.print()">

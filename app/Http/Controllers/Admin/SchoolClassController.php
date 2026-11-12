@@ -12,59 +12,22 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use App\Models\ClassSubject;
 use App\Models\Subject;
+use App\Services\ClassReportService;
 use App\Services\ExamService;
-use App\Services\StudentReportService;
 
 class SchoolClassController extends Controller
 {
     public function report(Request $request, SchoolClass $class)
     {
-        $currentYear = \App\Models\AcademicYear::where('is_current', true)->first();
+        $currentYear = AcademicYear::where('is_current', true)->first();
         if (!$currentYear) {
             return redirect()->route('admin.academic-years.index')
                 ->with('success', 'ابتدا یک سال تحصیلی «جاری» تعریف کنید.');
         }
 
-        $service = new StudentReportService();
+        $data = (new ClassReportService())->reportData($request, $class, $currentYear);
 
-        $quickFilter = $request->input('quick');
-        $fromInput   = $request->input('from');
-        $toInput     = $request->input('to');
-
-        [$fromDate, $toDate] = $service->resolveDateRange($fromInput, $toInput, $quickFilter, $currentYear);
-
-        $classSubjects = $class->classSubjects()->with('subject')->get();
-
-        $selectedSubjectId = $request->integer('subject');
-        $selectedSubject   = $selectedSubjectId
-            ? $classSubjects->firstWhere('id', $selectedSubjectId)
-            : null;
-
-        $ranking = $selectedSubject
-            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate)
-            : $service->getClassRanking($class, $fromDate, $toDate);
-
-        $summary          = $service->getClassSummary($class, $fromDate, $toDate);
-        $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
-
-        $subjects = $classSubjects->pluck('subject.name')
-            ->filter()
-            ->values();
-
-        return view('admin.classes.report', compact(
-            'class',
-            'currentYear',
-            'fromDate',
-            'toDate',
-            'quickFilter',
-            'ranking',
-            'summary',
-            'subjects',
-            'classSubjects',
-            'subjectSummaries',
-            'selectedSubjectId',
-            'selectedSubject'
-        ));
+        return view('admin.classes.report', $data);
     }
     public function index()
     {
@@ -266,85 +229,14 @@ class SchoolClassController extends Controller
     }
     public function reportFull(Request $request, SchoolClass $class)
     {
-        $currentYear = \App\Models\AcademicYear::where('is_current', true)->first();
+        $currentYear = AcademicYear::where('is_current', true)->first();
         if (!$currentYear) {
             return redirect()->route('admin.academic-years.index')
                 ->with('success', 'ابتدا یک سال تحصیلی «جاری» تعریف کنید.');
         }
 
-        $service = new StudentReportService();
+        $data = (new ClassReportService())->fullReportData($request, $class, $currentYear);
 
-        $quickFilter = $request->input('quick');
-        $fromInput   = $request->input('from');
-        $toInput     = $request->input('to');
-
-        [$fromDate, $toDate] = $service->resolveDateRange($fromInput, $toInput, $quickFilter, $currentYear);
-
-        // جدول اول (کاور) — مرتب بر اساس رتبه
-        $ranking = $service->getClassRanking($class, $fromDate, $toDate);
-        $summary = $service->getClassSummary($class, $fromDate, $toDate);
-
-        $classSubjects = $class->classSubjects()->with('subject')->get();
-        $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
-
-        $subjects = $classSubjects->pluck('subject.name')
-            ->filter()
-            ->values();
-
-        // نقشه رتبه بر اساس student_id برای دسترسی سریع
-        $rankByStudent = $ranking->keyBy(fn($r) => $r['student']->id);
-
-        // حلقه دانش‌آموزان — بر اساس حروف الفبا
-        $students = $class->students()->orderBy('name')->get();
-
-        $studentDetails = $students->map(function ($student) use ($service, $fromDate, $toDate, $rankByStudent, $class) {
-            $row = $rankByStudent->get($student->id);
-
-            $bySubject         = $service->getStatsByClassSubject($student, $fromDate, $toDate);
-            $points            = $service->getPointsSummary($student, $fromDate, $toDate);
-            $absences          = $service->getAbsenceDetails($student, $fromDate, $toDate);
-            $examResults       = $service->getExamResultsForStudent($student);
-            $subjectSummary    = $service->getSubjectSummary($student, $fromDate, $toDate);
-            $exerciseResults   = $service->getExerciseResultsForStudent($student);
-            $groupedAttendance = $service->getGroupedAttendanceByDate($student, $class, $fromDate, $toDate); // ← جدید
-
-            $stats       = $row['stats']        ?? $service->getOverallStats($student, $fromDate, $toDate);
-            $rank        = $row['rank']         ?? '—';
-            $percentage  = $row['percentage']   ?? $stats['percentage'];
-            $positiveSum = $row['positive_sum'] ?? 0;
-            $negativeSum = $row['negative_sum'] ?? 0;
-            $status      = $service->getStatusLabel($percentage);
-
-            return [
-                'rank'              => $rank,
-                'student'           => $student,
-                'points'            => $points,
-                'stats'             => $stats,
-                'percentage'        => $percentage,
-                'positive_sum'      => $positiveSum,
-                'negative_sum'      => $negativeSum,
-                'bySubject'         => $bySubject,
-                'absences'          => $absences,
-                'examResults'       => $examResults,
-                'exerciseResults'   => $exerciseResults,
-                'subjectSummary'    => $subjectSummary,
-                'groupedAttendance' => $groupedAttendance, // ← جدید
-                'status'            => $status,
-            ];
-        });
-
-        return view('admin.classes.full-report', compact(
-            'class',
-            'currentYear',
-            'fromDate',
-            'toDate',
-            'quickFilter',
-            'ranking',
-            'summary',
-            'subjects',
-            'studentDetails',
-            'classSubjects',
-            'subjectSummaries'
-        ));
+        return view('admin.classes.full-report', $data);
     }
 }

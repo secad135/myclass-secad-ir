@@ -157,6 +157,8 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         // کلاس‌های معلم
         Route::get('classes', [\App\Http\Controllers\Teacher\SchoolClassController::class, 'index'])->name('classes.index');
         Route::get('classes/{class}', [\App\Http\Controllers\Teacher\SchoolClassController::class, 'show'])->name('classes.show');
+        Route::get('classes/{class}/report', [\App\Http\Controllers\Teacher\SchoolClassController::class, 'report'])->name('classes.report');
+        Route::get('classes/{class}/full-report', [\App\Http\Controllers\Teacher\SchoolClassController::class, 'reportFull'])->name('classes.full-report');
 
         // دانش‌آموزان کلاس‌های معلم
         Route::get('students', [\App\Http\Controllers\Teacher\StudentController::class, 'index'])->name('students.index');

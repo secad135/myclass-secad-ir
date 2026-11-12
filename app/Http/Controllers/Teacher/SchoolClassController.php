@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Models\AcademicYear;
 use App\Models\ClassSubject;
 use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\ClassReportService;
+use Illuminate\Http\Request;
 
 class SchoolClassController extends BaseController
 {
@@ -40,6 +43,36 @@ class SchoolClassController extends BaseController
         $teachers = collect();
 
         return view('admin.classes.show', compact('class', 'availableStudents', 'availableSubjects', 'teachers'));
+    }
+
+    public function report(Request $request, SchoolClass $class)
+    {
+        $this->assertOwnsClass($class);
+
+        $currentYear = AcademicYear::where('is_current', true)->first();
+        if (!$currentYear) {
+            return redirect()->route('teacher.dashboard')
+                ->with('error', 'ابتدا مدیر باید یک سال تحصیلی «جاری» تعریف کند.');
+        }
+
+        $data = (new ClassReportService())->reportData($request, $class, $currentYear);
+
+        return view('admin.classes.report', $data);
+    }
+
+    public function reportFull(Request $request, SchoolClass $class)
+    {
+        $this->assertOwnsClass($class);
+
+        $currentYear = AcademicYear::where('is_current', true)->first();
+        if (!$currentYear) {
+            return redirect()->route('teacher.dashboard')
+                ->with('error', 'ابتدا مدیر باید یک سال تحصیلی «جاری» تعریف کند.');
+        }
+
+        $data = (new ClassReportService())->fullReportData($request, $class, $currentYear);
+
+        return view('admin.classes.full-report', $data);
     }
 
     protected function assertOwnsClass(SchoolClass $class): void

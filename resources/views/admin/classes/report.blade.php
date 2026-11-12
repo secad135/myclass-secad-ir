@@ -1,6 +1,8 @@
 @php
-$isManager = auth()->user()->is_school_manager;
-$layout = $isManager ? 'layouts.manager' : 'layouts.admin';
+$isTeacher = auth()->user()->is_teacher;
+$isManager = !$isTeacher && auth()->user()->is_school_manager;
+$panelPrefix = $isTeacher ? 'teacher' : ($isManager ? 'manager' : 'admin');
+$layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'layouts.admin');
 @endphp
 @extends($layout)
 
@@ -123,18 +125,18 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
         </small>
     </div>
     <div class="d-flex gap-2">
-        @if(!auth()->user()->is_school_manager)
-        <a href="{{ route('admin.classes.full-report', ['class' => $class, 'quick' => $quickFilter ?? 'all']) }}" class="btn btn-success">📄 گزارش کامل برای چاپ</a>
-        <a href="{{ route('admin.classes.show', $class) }}" class="btn btn-outline-secondary">بازگشت</a>
-        @else
+        @if($isManager)
         <a href="{{ route('manager.dashboard') }}" class="btn btn-outline-secondary">بازگشت به داشبورد</a>
+        @else
+        <a href="{{ route($panelPrefix . '.classes.full-report', ['class' => $class, 'quick' => $quickFilter ?? 'all']) }}" class="btn btn-success">📄 گزارش کامل برای چاپ</a>
+        <a href="{{ route($panelPrefix . '.classes.show', $class) }}" class="btn btn-outline-secondary">بازگشت</a>
         @endif
     </div>
 </div>
 
 <div class="card mb-3">
     <div class="card-body">
-        <form method="GET" action="{{ $isManager ? route('manager.classes.report', $class) : route('admin.classes.report', $class) }}" class="row g-2 align-items-end">
+        <form method="GET" action="{{ route($panelPrefix . '.classes.report', $class) }}" class="row g-2 align-items-end">
             <div class="col-md-2">
                 <label class="form-label small mb-1">از تاریخ (شمسی)</label>
                 <input type="text" name="from" class="form-control form-control-sm" value="{{ $quickFilter ? '' : jdate($fromDate) }}" placeholder="1405/07/01" dir="ltr" data-jdp data-jdp-only-date>
@@ -159,9 +161,9 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
             </div>
             <div class="col-md-4 text-md-end">
                 <div class="btn-group btn-group-sm" role="group">
-                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'all', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ ($quickFilter ?? 'all') === 'all' ? 'active' : '' }}">همه (سال تحصیلی)</a>
-                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'this_month', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ $quickFilter === 'this_month' ? 'active' : '' }}">این ماه</a>
-                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'last_30_days', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ $quickFilter === 'last_30_days' ? 'active' : '' }}">۳۰ روز گذشته</a>
+                    <a href="{{ route($panelPrefix . '.classes.report', ['class' => $class, 'quick' => 'all', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ ($quickFilter ?? 'all') === 'all' ? 'active' : '' }}">همه (سال تحصیلی)</a>
+                    <a href="{{ route($panelPrefix . '.classes.report', ['class' => $class, 'quick' => 'this_month', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ $quickFilter === 'this_month' ? 'active' : '' }}">این ماه</a>
+                    <a href="{{ route($panelPrefix . '.classes.report', ['class' => $class, 'quick' => 'last_30_days', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ $quickFilter === 'last_30_days' ? 'active' : '' }}">۳۰ روز گذشته</a>
                 </div>
             </div>
         </form>
@@ -342,9 +344,7 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                     </td>
                    
                     <td class="text-center">
-                        <a href="{{ auth()->user()->is_school_manager 
-        ? route('manager.students.show', ['student' => $row['student'], 'class_id' => $class->id]) 
-        : route('admin.students.show', ['student' => $row['student'], 'class_id' => $class->id]) }}"
+                        <a href="{{ route($panelPrefix . '.students.show', ['student' => $row['student'], 'class_id' => $class->id]) }}"
                             class="btn btn-sm btn-outline-info">
                             وضعیت کلی
                         </a>
