@@ -51,7 +51,7 @@ class StudentController extends Controller
     {
         $students = User::students()
             ->withCount('enrollments')
-            ->latest() // <--- این خط تغییر کرد
+            ->orderBy('id', 'asc')
             ->get();
 
         return view('admin.students.index', compact('students'));
