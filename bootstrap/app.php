@@ -31,6 +31,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
             'manager'          => \App\Http\Middleware\EnsureUserIsSchoolManager::class,
         ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\PreventBackHistory::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(
