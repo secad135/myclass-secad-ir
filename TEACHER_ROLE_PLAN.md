@@ -219,23 +219,23 @@ ALTER TABLE `exercises`
 **commit:** `feat(teacher): add teacher schema and model relations`
 
 ### ۲.۶ middleware و ورود
-- [ ] `EnsureUserIsTeacher` + alias `teacher` در `bootstrap/app.php`
-- [ ] `EnsurePasswordChanged`: مسیر معلم به `teacher.profile`
-- [ ] `AuthenticatedSessionController`: ریدایرکت معلم
-- [ ] `/dashboard`: ریدایرکت معلم
-- [ ] تست: معلم بدون تغییر رمز → پروفایل؛ بعد از تغییر → داشبورد
+- [x] `EnsureUserIsTeacher` + alias `teacher` در `bootstrap/app.php`
+- [x] `EnsurePasswordChanged`: مسیر معلم به `teacher.profile`
+- [x] `AuthenticatedSessionController`: ریدایرکت معلم
+- [x] `/dashboard`: ریدایرکت معلم
+- [x] تست: معلم بدون تغییر رمز → پروفایل؛ بعد از تغییر → داشبورد
 
 **commit:** `feat(teacher): add teacher auth guard and redirects`
 
 ### ۳.۶ CRUD معلم در ادمین
-- [ ] `Admin\TeacherController` (index/create/store/edit/update/destroy/resetPassword)
-- [ ] routeهای `admin.teachers.*` (قبل از resource برای reset-password)
-- [ ] views `admin/teachers/*`
-- [ ] لینک «معلم‌ها» در سایدبار ادمین، گروه «کلاس و افراد»
-- [ ] store: تولید رمز با `StudentCredentialService`، `is_teacher=true`, `initial_password`, `must_change_password=true`
-- [ ] resetPassword: رمز جدید + `must_change_password=true`
-- [ ] destroy: اگر `classSubjectsAsTeacher` یا `homeroomClasses` یا `createdExams` یا `createdExercises` دارد → ممنوع با پیام
-- [ ] تست: ساخت/ویرایش/ریست/حذف معلم
+- [x] `Admin\TeacherController` (index/create/store/edit/update/destroy/resetPassword)
+- [x] routeهای `admin.teachers.*` (قبل از resource برای reset-password)
+- [x] views `admin/teachers/*`
+- [x] لینک «معلم‌ها» در سایدبار ادمین، گروه «کلاس و افراد»
+- [x] store: تولید رمز با `StudentCredentialService`، `is_teacher=true`, `initial_password`, `must_change_password=true`
+- [x] resetPassword: رمز جدید + `must_change_password=true`
+- [x] destroy: اگر `classSubjectsAsTeacher` یا `homeroomClasses` یا `createdExams` یا `createdExercises` دارد → ممنوع با پیام
+- [x] تست: ساخت/ویرایش/ریست/حذف معلم
 
 **commit:** `feat(teacher): add admin teacher CRUD`
 
@@ -469,8 +469,8 @@ ALTER TABLE `exercises`
 | ساخت شاخه `feature/teacher-role` | ✅ | - | `feature/teacher-role` از `main` ساخته و push شد |
 | کپی طرح به `TEACHER_ROLE_PLAN.md` | ✅ | - | نسخه پروژه ساخته شد |
 | migrationها و مدل‌ها | ⬜ | - | |
-| middleware و ورود معلم | ⬜ | - | |
-| CRUD معلم در ادمین | ⬜ | - | |
+| middleware و ورود معلم | ✅ | - | |
+| CRUD معلم در ادمین | ✅ | - | |
 | تخصیص معلم به درس | ⬜ | - | |
 | layout و اسکلت پنل معلم | ⬜ | - | |
 | داشبورد و پروفایل معلم | ⬜ | - | |

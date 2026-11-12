@@ -30,6 +30,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'student'          => \App\Http\Middleware\EnsureStudent::class,
             'password.changed' => \App\Http\Middleware\EnsurePasswordChanged::class,
             'manager'          => \App\Http\Middleware\EnsureUserIsSchoolManager::class,
+            'teacher'          => \App\Http\Middleware\EnsureUserIsTeacher::class,
         ]);
         $middleware->web(append: [
             \App\Http\Middleware\PreventBackHistory::class,

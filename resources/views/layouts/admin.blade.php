@@ -439,7 +439,7 @@
             @php
             $activeGroups = [
             'basic' => request()->routeIs('admin.schools.*', 'admin.academic-years.*', 'admin.grades.*', 'admin.subjects.*', 'admin.topics.*', 'admin.questions.*'),
-            'people' => request()->routeIs('admin.classes.*', 'admin.students.*', 'admin.managers.*'),
+            'people' => request()->routeIs('admin.classes.*', 'admin.students.*', 'admin.teachers.*', 'admin.managers.*'),
             'tasks' => request()->routeIs('admin.exams.*', 'admin.exercises.*'),
             'reports' => request()->routeIs('admin.point-categories.*', 'admin.login-logs.*'),
             ];
@@ -478,6 +478,7 @@
                 <a href="{{ route('admin.classes.index') }}" class="sub-link {{ request()->routeIs('admin.classes.*') ? 'active' : '' }}">🏛️ کلاس‌ها</a>
                 <a href="{{ route('admin.students.index') }}" class="sub-link {{ request()->routeIs('admin.students.index', 'admin.students.create', 'admin.students.edit', 'admin.students.show') ? 'active' : '' }}">👨‍🎓 دانش‌آموزان</a>
                 <a href="{{ route('admin.students.credentials') }}" class="sub-link {{ request()->routeIs('admin.students.credentials') ? 'active' : '' }}">🔑 برگه اطلاعات ورود</a>
+                <a href="{{ route('admin.teachers.index') }}" class="sub-link {{ request()->routeIs('admin.teachers.*') ? 'active' : '' }}">👨‍🏫 معلم‌ها</a>
                 <a href="{{ route('admin.managers.index') }}" class="sub-link {{ request()->routeIs('admin.managers.*') ? 'active' : '' }}">🏫 مسئولین مدارس</a>
             </div>
 

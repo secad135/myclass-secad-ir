@@ -32,6 +32,10 @@ Route::middleware('auth')->get('/dashboard', function () {
         return redirect()->route('panel.dashboard');
     }
 
+    if ($user->is_teacher) {
+        return redirect()->route('teacher.dashboard');
+    }
+
     return view('dashboard');
 })->name('dashboard');
 
@@ -108,6 +112,10 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('exercises/{exercise}/submissions/{submission}/grade', [\App\Http\Controllers\Admin\ExerciseController::class, 'grade'])->name('exercises.grade');
 
     Route::resource('exercises', \App\Http\Controllers\Admin\ExerciseController::class);
+
+    // --- معلم‌ها ---
+    Route::post('teachers/{teacher}/reset-password', [\App\Http\Controllers\Admin\TeacherController::class, 'resetPassword'])->name('teachers.reset-password');
+    Route::resource('teachers', \App\Http\Controllers\Admin\TeacherController::class)->except(['show']);
 
     // --- مسئولان مدرسه ---
     Route::post('managers/{manager}/reset-password', [\App\Http\Controllers\Admin\ManagerController::class, 'resetPassword'])->name('managers.reset-password');
