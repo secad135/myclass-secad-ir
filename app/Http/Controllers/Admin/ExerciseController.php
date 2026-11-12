@@ -40,6 +40,7 @@ class ExerciseController extends Controller
 
         Exercise::create([
             'class_subject_id'       => $data['class_subject_id'],
+            'created_by'             => auth()->id(),
             'title'                  => $data['title'],
             'description'            => $data['description'],
             'attachment_path'        => $attachmentPath,

@@ -45,6 +45,7 @@ class ExamController extends Controller
         DB::transaction(function () use ($data, $request) {
             $exam = Exam::create([
                 'class_subject_id'        => $data['class_subject_id'],
+                'created_by'              => auth()->id(),
                 'title'                   => $data['title'],
                 'description'             => $data['description'] ?? null,
                 'question_count'          => $data['question_count'],

@@ -180,6 +180,16 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         Route::get('exams/{exam}/results', [\App\Http\Controllers\Teacher\ExamController::class, 'results'])->name('exams.results');
         Route::get('exams/{exam}/attempts/{attempt}', [\App\Http\Controllers\Teacher\ExamController::class, 'attemptDetail'])->name('exams.attempt-detail');
         Route::post('exams/attempts/{attempt}/approve-score', [\App\Http\Controllers\Teacher\ExamController::class, 'approveScore'])->name('exams.approve-score');
+
+        // تمرین‌های معلم
+        Route::get('exercises', [\App\Http\Controllers\Teacher\ExerciseController::class, 'index'])->name('exercises.index');
+        Route::get('exercises/create', [\App\Http\Controllers\Teacher\ExerciseController::class, 'create'])->name('exercises.create');
+        Route::post('exercises', [\App\Http\Controllers\Teacher\ExerciseController::class, 'store'])->name('exercises.store');
+        Route::get('exercises/{exercise}/edit', [\App\Http\Controllers\Teacher\ExerciseController::class, 'edit'])->name('exercises.edit');
+        Route::put('exercises/{exercise}', [\App\Http\Controllers\Teacher\ExerciseController::class, 'update'])->name('exercises.update');
+        Route::delete('exercises/{exercise}', [\App\Http\Controllers\Teacher\ExerciseController::class, 'destroy'])->name('exercises.destroy');
+        Route::get('exercises/{exercise}/submissions', [\App\Http\Controllers\Teacher\ExerciseController::class, 'submissions'])->name('exercises.submissions');
+        Route::post('exercises/{exercise}/submissions/{submission}/grade', [\App\Http\Controllers\Teacher\ExerciseController::class, 'grade'])->name('exercises.grade');
     });
 
 // ==================== پنل دانش‌آموز ====================

@@ -1,4 +1,9 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
 @section('title', 'پاسخ‌های ' . $exercise->title)
 
@@ -105,7 +110,7 @@
                 حداکثر نمره: {{ $exercise->max_score }}
             </small>
         </div>
-        <a href="{{ route('admin.exercises.index') }}" class="btn btn-secondary">بازگشت</a>
+        <a href="{{ route($panelPrefix . '.exercises.index') }}" class="btn btn-secondary">بازگشت</a>
     </div>
 
     @if(session('success'))
@@ -190,7 +195,7 @@
 
                                     <hr>
 
-                                    <form action="{{ route('admin.exercises.grade', [$exercise, $sub]) }}" method="POST">
+                                    <form action="{{ route($panelPrefix . '.exercises.grade', [$exercise, $sub]) }}" method="POST">
                                         @csrf
                                         <div class="mb-3">
                                             <label class="form-label">نمره (از {{ $exercise->max_score }})</label>

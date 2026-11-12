@@ -1,6 +1,11 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
-@section('title', 'تمرین‌ها')
+@section('title', $isTeacher ? 'تمرین‌های من' : 'تمرین‌ها')
 
 @section('head')
 <style>
@@ -47,8 +52,8 @@
 @section('content')
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">تمرین‌ها</h4>
-        <a href="{{ route('admin.exercises.create') }}" class="btn btn-primary">➕ ساخت تمرین</a>
+        <h4 class="mb-0">{{ $isTeacher ? 'تمرین‌های من' : 'تمرین‌ها' }}</h4>
+        <a href="{{ route($panelPrefix . '.exercises.create') }}" class="btn btn-primary">➕ ساخت تمرین</a>
     </div>
 
     <table class="table table-bordered align-middle bg-white mobile-cards">
@@ -85,9 +90,9 @@
                         <span class="badge bg-{{ $status['color'] }}">{{ $status['label'] }}</span>
                     </td>
                     <td data-label="عملیات">
-                        <a href="{{ route('admin.exercises.submissions', $exercise) }}" class="btn btn-sm btn-info">📋 پاسخ‌ها</a>
-                        <a href="{{ route('admin.exercises.edit', $exercise) }}" class="btn btn-sm btn-warning">ویرایش</a>
-                        <form action="{{ route('admin.exercises.destroy', $exercise) }}" method="POST" class="d-inline">
+                        <a href="{{ route($panelPrefix . '.exercises.submissions', $exercise) }}" class="btn btn-sm btn-info">📋 پاسخ‌ها</a>
+                        <a href="{{ route($panelPrefix . '.exercises.edit', $exercise) }}" class="btn btn-sm btn-warning">ویرایش</a>
+                        <form action="{{ route($panelPrefix . '.exercises.destroy', $exercise) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
                             <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟ همه پاسخ‌ها هم حذف می‌شوند.')">حذف</button>
