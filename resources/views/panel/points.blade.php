@@ -36,7 +36,7 @@
 
     <div class="row g-3 mb-3">
         <div class="col-md-4"><div class="card text-center"><div class="card-body">
-            <div class="small text-muted">امتیاز کل</div>
+            <div class="small text-muted">جمع امتیاز دروس</div>
             <h2 class="mb-0 text-{{ $points['total'] >= 0 ? 'success' : 'danger' }}">{{ $points['total'] > 0 ? '+' : '' }}{{ $points['total'] }}</h2>
         </div></div></div>
         <div class="col-md-4"><div class="card text-center"><div class="card-body">
@@ -47,6 +47,47 @@
             <div class="small text-muted">جمع منفی</div>
             <h3 class="mb-0 text-danger">{{ $points['negative'] }}</h3>
         </div></div></div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <strong>امتیاز به تفکیک درس</strong>
+            <small class="text-muted">جمع هر درس جداگانه محاسبه می‌شود</small>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>درس</th>
+                        <th>کلاس</th>
+                        <th class="text-center">امتیاز خالص</th>
+                        <th class="text-center">مثبت</th>
+                        <th class="text-center">منفی</th>
+                        <th class="text-center">تعداد ثبت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($points['by_subject'] as $subjectPoint)
+                        <tr>
+                            <td><strong>{{ $subjectPoint['subject_name'] }}</strong></td>
+                            <td><small class="text-muted">{{ $subjectPoint['class_name'] }}</small></td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ $subjectPoint['total'] >= 0 ? 'success' : 'danger' }}">
+                                    {{ $subjectPoint['total'] > 0 ? '+' : '' }}{{ $subjectPoint['total'] }}
+                                </span>
+                            </td>
+                            <td class="text-center text-success">+{{ $subjectPoint['positive'] }}</td>
+                            <td class="text-center text-danger">{{ $subjectPoint['negative'] }}</td>
+                            <td class="text-center text-muted">{{ $subjectPoint['count'] }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">درسی برای شما یافت نشد.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="card">

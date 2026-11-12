@@ -229,7 +229,7 @@
                 </div>
                 <div class="col">
                     <div class="stat-box">
-                        <div class="small text-muted">میانگین امتیاز</div>
+                        <div class="small text-muted">میانگین جمع امتیاز دروس</div>
                         <div class="value {{ $summary['avg_points'] >= 0 ? 'text-success' : 'text-danger' }}">
                             {{ $summary['avg_points'] > 0 ? '+' : '' }}{{ $summary['avg_points'] }}
                         </div>
@@ -255,13 +255,50 @@
                 </div>
             </div>
 
+            <h4 class="mb-2">امتیاز به تفکیک درس</h4>
+            <table class="table table-sm table-bordered align-middle mb-4">
+                <thead class="table-light">
+                    <tr>
+                        <th>درس</th>
+                        <th class="text-center">میانگین خالص</th>
+                        <th class="text-center">میانگین مثبت</th>
+                        <th class="text-center">میانگین منفی</th>
+                        <th class="text-center">دانش‌آموزان دارای امتیاز</th>
+                        <th class="text-center">تعداد ثبت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($subjectSummaries as $ss)
+                        <tr>
+                            <td>{{ $ss['subject_name'] }}</td>
+                            <td class="text-center">
+                                <span class="badge bg-{{ $ss['avg_points'] >= 0 ? 'success' : 'danger' }}">
+                                    {{ $ss['avg_points'] > 0 ? '+' : '' }}{{ $ss['avg_points'] }}
+                                </span>
+                            </td>
+                            <td class="text-center text-success">+{{ $ss['avg_positive'] }}</td>
+                            <td class="text-center text-danger">{{ $ss['avg_negative'] }}</td>
+                            <td class="text-center">{{ $ss['students_with_points'] }} / {{ $summary['students_count'] }}</td>
+                            <td class="text-center text-muted">{{ $ss['count'] }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="text-center text-muted">درسی برای این کلاس تعریف نشده است.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+
             <h4 class="mb-2">جدول رتبه‌بندی کلاس</h4>
             <table class="table table-sm table-bordered align-middle mb-0">
                 <thead class="table-light">
                     <tr>
                         <th class="text-center" style="width: 55px;">رتبه</th>
                         <th>نام دانش‌آموز</th>
-                        <th class="text-center">امتیاز کل</th>
+                        @foreach($classSubjects as $cs)
+                            <th class="text-center">{{ $cs->subject?->name ?? '—' }}</th>
+                        @endforeach
+                        <th class="text-center">جمع دروس</th>
                         <th class="text-center">درصد حضور</th>
                         <th class="text-center">غایب</th>
                         <th class="text-center">تاخیر</th>
@@ -275,6 +312,18 @@
                     <tr>
                         <td class="text-center">{{ $medal }} {{ $row['rank'] }}</td>
                         <td>{{ $row['student']->name }}</td>
+                        @foreach($classSubjects as $cs)
+                            @php $subjectPoint = $row['by_subject']->get($cs->id); @endphp
+                            <td class="text-center">
+                                @if($subjectPoint)
+                                    <span class="badge bg-{{ $subjectPoint['total'] >= 0 ? 'success' : 'danger' }}">
+                                        {{ $subjectPoint['total'] > 0 ? '+' : '' }}{{ $subjectPoint['total'] }}
+                                    </span>
+                                @else
+                                    <span class="text-muted">0</span>
+                                @endif
+                            </td>
+                        @endforeach
                         <td class="text-center">
                             <strong class="{{ $row['points'] >= 0 ? 'text-success' : 'text-danger' }}">
                                 {{ $row['points'] > 0 ? '+' : '' }}{{ $row['points'] }}
@@ -292,7 +341,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="6" class="text-center text-muted">هیچ دانش‌آموزی در این کلاس ثبت‌نام نشده است.</td>
+                        <td colspan="{{ 5 + $classSubjects->count() }}" class="text-center text-muted">هیچ دانش‌آموزی در این کلاس ثبت‌نام نشده است.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -322,7 +371,7 @@
             <div class="row g-2 mb-3">
                 <div class="col">
                     <div class="stat-box">
-                        <div class="small text-muted">امتیاز کل</div>
+                        <div class="small text-muted">جمع امتیاز دروس</div>
                         <div class="value {{ $detail['points']['total'] >= 0 ? 'text-success' : 'text-danger' }}">
                             {{ $detail['points']['total'] > 0 ? '+' : '' }}{{ $detail['points']['total'] }}
                         </div>
@@ -368,6 +417,9 @@
                     $ssTotalPresentC = $ssTotalPresent + $ssTotalLate + $ssTotalExcused;
                     $ssTotalPercent  = $ssTotalHeld > 0 ? round(($ssTotalPresentC / $ssTotalHeld) * 100, 1) : 0;
                     $ssTotalPoints   = $detail['subjectSummary']->sum('points');
+                    $ssTotalPositive = $detail['subjectSummary']->sum('points_positive');
+                    $ssTotalNegative = $detail['subjectSummary']->sum('points_negative');
+                    $ssTotalCount    = $detail['subjectSummary']->sum('points_count');
                     $ssTotalTaken    = $detail['subjectSummary']->sum('exams_taken');
                     $ssTotalExams    = $detail['subjectSummary']->sum('exams_total');
 
@@ -383,7 +435,7 @@
                     <table class="table table-sm table-bordered align-middle mb-0">
                         <thead class="table-light">
                             <tr>
-                                <th colspan="7" class="text-end small" style="background:#f8f9fa; font-weight:bold;">
+                                <th colspan="10" class="text-end small" style="background:#f8f9fa; font-weight:bold;">
                                     {{ $detail['student']->name }} — خلاصه درس‌ها
                                 </th>
                             </tr>
@@ -391,7 +443,10 @@
                                 <th>درس</th>
                                 <th class="text-center" style="width: 80px;">درصد حضور</th>
                                 <th class="text-center" style="width: 60px;">غایب</th>
-                                <th class="text-center" style="width: 80px;">امتیاز دستی</th>
+                                <th class="text-center" style="width: 80px;">امتیاز خالص</th>
+                                <th class="text-center" style="width: 70px;">مثبت</th>
+                                <th class="text-center" style="width: 70px;">منفی</th>
+                                <th class="text-center" style="width: 60px;">تعداد</th>
                                 <th class="text-center" style="width: 90px;">میانگین آزمون</th>
                                 <th class="text-center" style="width: 70px;">آزمون‌ها</th>
                                 <th class="text-center" style="width: 100px;">وضعیت</th>
@@ -414,6 +469,9 @@
                                             {{ $ss['points'] > 0 ? '+' : '' }}{{ $ss['points'] }}
                                         </span>
                                     </td>
+                                    <td class="text-center text-success">+{{ $ss['points_positive'] }}</td>
+                                    <td class="text-center text-danger">{{ $ss['points_negative'] }}</td>
+                                    <td class="text-center text-muted">{{ $ss['points_count'] }}</td>
                                     <td class="text-center">
                                         @if($ss['avg_exam'] !== null)
                                             <span class="badge bg-{{ $ss['avg_exam'] >= 17 ? 'success' : ($ss['avg_exam'] >= 10 ? 'warning text-dark' : 'danger') }}">
@@ -445,6 +503,9 @@
                                         {{ $ssTotalPoints > 0 ? '+' : '' }}{{ $ssTotalPoints }}
                                     </span>
                                 </td>
+                                <td class="text-center text-success">+{{ $ssTotalPositive }}</td>
+                                <td class="text-center text-danger">{{ $ssTotalNegative }}</td>
+                                <td class="text-center text-muted">{{ $ssTotalCount }}</td>
                                 <td class="text-center">
                                     @if($ssTotalAvg !== null)
                                         <span class="badge bg-{{ $ssTotalAvg >= 17 ? 'success' : ($ssTotalAvg >= 10 ? 'warning text-dark' : 'danger') }}">

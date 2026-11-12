@@ -143,12 +143,68 @@ class StudentReportService
             ->get();
 
         return [
-            'entries'  => $entries,
-            'total'    => (int) $entries->sum('points'),
-            'positive' => (int) $entries->where('points', '>', 0)->sum('points'),
-            'negative' => (int) $entries->where('points', '<', 0)->sum('points'),
-            'count'    => $entries->count(),
+            'entries'     => $entries,
+            'total'       => (int) $entries->sum('points'),
+            'positive'    => (int) $entries->where('points', '>', 0)->sum('points'),
+            'negative'    => (int) $entries->where('points', '<', 0)->sum('points'),
+            'count'       => $entries->count(),
+            'by_subject'  => $this->getPointsSummaryBySubject($student, $fromDate, $toDate, $entries),
         ];
+    }
+
+    /**
+     * خلاصه امتیازات دستی به تفکیک هر درس (ClassSubject) در بازه
+     *
+     * حتی درس‌هایی که در بازه امتیازی ندارند هم با مقدار صفر برگردانده می‌شوند
+     * تا گزارش هر درس کامل باشد.
+     */
+    public function getPointsSummaryBySubject(
+        User $student,
+        string $fromDate,
+        string $toDate,
+        ?Collection $entries = null
+    ): Collection {
+        $entries ??= PointEntry::query()
+            ->where('student_id', $student->id)
+            ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->with(['classSubject.subject', 'classSubject.schoolClass'])
+            ->orderByDesc('entry_date')
+            ->orderByDesc('id')
+            ->get();
+
+        $entriesBySubject = $entries->groupBy('class_subject_id');
+        $subjectIds = $entriesBySubject->keys()->filter()->values()->all();
+
+        $classSubjects = ClassSubject::query()
+            ->where(function ($q) use ($student, $subjectIds) {
+                $q->whereHas('schoolClass.students', function ($q2) use ($student) {
+                    $q2->where('users.id', $student->id);
+                });
+
+                if (!empty($subjectIds)) {
+                    $q->orWhereIn('id', $subjectIds);
+                }
+            })
+            ->with(['subject', 'schoolClass'])
+            ->get();
+
+        return $classSubjects
+            ->map(function (ClassSubject $cs) use ($entriesBySubject) {
+                $rows = $entriesBySubject->get($cs->id, collect());
+
+                return [
+                    'class_subject_id' => $cs->id,
+                    'subject_name'     => $cs->subject?->name ?? '—',
+                    'class_name'       => $cs->schoolClass?->name ?? '—',
+                    'total'            => (int) $rows->sum('points'),
+                    'positive'         => (int) $rows->where('points', '>', 0)->sum('points'),
+                    'negative'         => (int) $rows->where('points', '<', 0)->sum('points'),
+                    'count'            => $rows->count(),
+                    'last_entry_date'  => $rows->first()?->entry_date,
+                ];
+            })
+            ->sortBy('subject_name')
+            ->values();
     }
 
     /**
@@ -199,6 +255,7 @@ class StudentReportService
                 'points'       => $points,
                 'positive_sum' => $positiveSum,
                 'negative_sum' => $negativeSum,
+                'by_subject'   => $this->buildSubjectPoints($entries),
                 'stats'        => $stats,
                 'percentage'   => $stats['percentage'],
             ];
@@ -209,13 +266,98 @@ class StudentReportService
                 if ($b['points'] !== $a['points']) {
                     return $b['points'] <=> $a['points'];
                 }
-                return $b['percentage'] <=> $a['percentage'];
+                if ($b['percentage'] !== $a['percentage']) {
+                    return $b['percentage'] <=> $a['percentage'];
+                }
+                return strcmp($a['student']->name, $b['student']->name);
             })
             ->values()
             ->map(function ($row, $i) {
                 $row['rank'] = $i + 1;
                 return $row;
             });
+    }
+
+    /**
+     * رتبه‌بندی دانش‌آموزان کلاس در یک درس مشخص
+     */
+    public function getClassRankingBySubject(
+        SchoolClass $class,
+        ClassSubject $classSubject,
+        string $fromDate,
+        string $toDate
+    ): Collection {
+        $students = $class->students()->orderBy('name')->get();
+
+        $rows = $students->map(function (User $student) use ($classSubject, $fromDate, $toDate) {
+            $entries = PointEntry::query()
+                ->where('student_id', $student->id)
+                ->where('class_subject_id', $classSubject->id)
+                ->whereBetween('entry_date', [$fromDate, $toDate])
+                ->get();
+
+            $stats = $this->getAttendanceStats($student, $classSubject, $fromDate, $toDate);
+
+            return [
+                'student'      => $student,
+                'points'       => (int) $entries->sum('points'),
+                'positive_sum' => (int) $entries->where('points', '>', 0)->sum('points'),
+                'negative_sum' => (int) $entries->where('points', '<', 0)->sum('points'),
+                'by_subject'   => $this->buildSubjectPoints($entries),
+                'stats'        => $stats,
+                'percentage'   => $stats['percentage'],
+            ];
+        });
+
+        return $rows
+            ->sort(function ($a, $b) {
+                if ($b['points'] !== $a['points']) {
+                    return $b['points'] <=> $a['points'];
+                }
+                if ($b['percentage'] !== $a['percentage']) {
+                    return $b['percentage'] <=> $a['percentage'];
+                }
+                return strcmp($a['student']->name, $b['student']->name);
+            })
+            ->values()
+            ->map(function ($row, $i) {
+                $row['rank'] = $i + 1;
+                return $row;
+            });
+    }
+
+    /**
+     * خلاصه امتیاز هر درس در کلاس (برای کارت‌های تفکیک‌شده)
+     */
+    public function getClassSubjectSummaries(SchoolClass $class, string $fromDate, string $toDate): Collection
+    {
+        $classSubjects = $class->classSubjects()->with(['subject', 'schoolClass'])->get();
+        $studentIds = $class->students()->pluck('users.id')->all();
+        $studentsCount = count($studentIds);
+
+        return $classSubjects->map(function (ClassSubject $cs) use ($studentIds, $studentsCount, $fromDate, $toDate) {
+            $entries = PointEntry::query()
+                ->whereIn('student_id', $studentIds)
+                ->where('class_subject_id', $cs->id)
+                ->whereBetween('entry_date', [$fromDate, $toDate])
+                ->get();
+
+            $perStudent = $entries->groupBy('student_id')
+                ->map(fn($rows) => (int) $rows->sum('points'));
+
+            return [
+                'class_subject_id'    => $cs->id,
+                'subject_name'        => $cs->subject?->name ?? '—',
+                'total'               => (int) $entries->sum('points'),
+                'positive'            => (int) $entries->where('points', '>', 0)->sum('points'),
+                'negative'            => (int) $entries->where('points', '<', 0)->sum('points'),
+                'count'               => $entries->count(),
+                'students_with_points'=> $perStudent->count(),
+                'avg_points'          => $studentsCount > 0 ? round($perStudent->sum() / $studentsCount, 1) : 0,
+                'avg_positive'        => $studentsCount > 0 ? round($entries->where('points', '>', 0)->sum('points') / $studentsCount, 1) : 0,
+                'avg_negative'        => $studentsCount > 0 ? round($entries->where('points', '<', 0)->sum('points') / $studentsCount, 1) : 0,
+            ];
+        })->sortBy('subject_name')->values();
     }
 
     /**
@@ -314,7 +456,7 @@ class StudentReportService
      * خلاصه به تفکیک درس (برای گزارش کامل)
      * شامل: حضور، غایب، امتیاز دستی، میانگین آزمون‌ها، وضعیت
      */
-    public function getSubjectSummary(User $student): Collection
+    public function getSubjectSummary(User $student, ?string $fromDate = null, ?string $toDate = null): Collection
     {
         $classSubjects = ClassSubject::query()
             ->whereHas('schoolClass.students', function ($q) use ($student) {
@@ -323,13 +465,18 @@ class StudentReportService
             ->with(['subject', 'schoolClass'])
             ->get();
 
-        return $classSubjects->map(function (ClassSubject $cs) use ($student) {
-            // حضور و غیاب (کل تاریخچه این درس)
-            $counts = Attendance::where('student_id', $student->id)
-                ->whereHas('attendanceDay', fn($q) => $q->where('class_subject_id', $cs->id))
-                ->pluck('status')
-                ->countBy()
-                ->all();
+        return $classSubjects->map(function (ClassSubject $cs) use ($student, $fromDate, $toDate) {
+            // حضور و غیاب (در بازه در صورت ارسال تاریخ)
+            $attendanceQuery = Attendance::where('student_id', $student->id)
+                ->whereHas('attendanceDay', function ($q) use ($cs, $fromDate, $toDate) {
+                    $q->where('class_subject_id', $cs->id);
+
+                    if ($fromDate && $toDate) {
+                        $q->whereBetween('date', [$fromDate, $toDate]);
+                    }
+                });
+
+            $counts = $attendanceQuery->pluck('status')->countBy()->all();
 
             $present   = $counts['present']   ?? 0;
             $late      = $counts['late']      ?? 0;
@@ -345,10 +492,15 @@ class StudentReportService
                 ? round(($presentCombined / $totalHeld) * 100, 1)
                 : 0;
 
-            // امتیاز دستی این درس
-            $points = (int) PointEntry::where('student_id', $student->id)
-                ->where('class_subject_id', $cs->id)
-                ->sum('points');
+            // امتیاز دستی این درس (در بازه در صورت ارسال تاریخ)
+            $pointQuery = PointEntry::where('student_id', $student->id)
+                ->where('class_subject_id', $cs->id);
+
+            if ($fromDate && $toDate) {
+                $pointQuery->whereBetween('entry_date', [$fromDate, $toDate]);
+            }
+
+            $pointEntries = $pointQuery->get();
 
             // نتایج آزمون‌های این درس
             $examRows = $this->getExamResultsForStudent($student, [$cs->id]);
@@ -368,7 +520,10 @@ class StudentReportService
                 'total_held'       => $totalHeld,
                 'percentage'       => $percentage,
                 'status'           => $this->getStatusLabel($percentage),
-                'points'           => $points,
+                'points'           => (int) $pointEntries->sum('points'),
+                'points_positive'  => (int) $pointEntries->where('points', '>', 0)->sum('points'),
+                'points_negative'  => (int) $pointEntries->where('points', '<', 0)->sum('points'),
+                'points_count'     => $pointEntries->count(),
                 'avg_exam'         => $avgExam,
                 'exams_taken'      => $examsTaken,
                 'exams_total'      => $examsTotal,
@@ -545,6 +700,22 @@ class StudentReportService
     }
 
     // --- helpers داخلی ---
+
+    /**
+     * تبدیل ریز امتیازات به خلاصهٔ هر درس، کلید = class_subject_id
+     */
+    private function buildSubjectPoints(Collection $entries): Collection
+    {
+        return $entries->groupBy('class_subject_id')->map(function ($rows, $classSubjectId) {
+            return [
+                'class_subject_id' => (int) $classSubjectId,
+                'total'            => (int) $rows->sum('points'),
+                'positive'         => (int) $rows->where('points', '>', 0)->sum('points'),
+                'negative'         => (int) $rows->where('points', '<', 0)->sum('points'),
+                'count'            => $rows->count(),
+            ];
+        });
+    }
 
     private function buildStatsArray(array $counts): array
     {

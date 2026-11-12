@@ -202,7 +202,7 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
     <div class="col-md-3">
         <div class="card text-center border-{{ $points['total'] >= 0 ? 'success' : 'danger' }}">
             <div class="card-body">
-                <div class="small text-muted">امتیاز کل</div>
+                <div class="small text-muted">جمع امتیاز دروس</div>
                 <h3 class="mb-0 text-{{ $points['total'] >= 0 ? 'success' : 'danger' }}">{{ $points['total'] > 0 ? '+' : '' }}{{ $points['total'] }}</h3>
                 <small class="text-muted">(+{{ $points['positive'] }} / {{ $points['negative'] }})</small>
             </div>
@@ -234,6 +234,52 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                 <small class="text-muted">جلسه</small>
             </div>
         </div>
+    </div>
+</div>
+
+{{-- امتیاز به تفکیک درس --}}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>امتیاز به تفکیک درس</strong>
+        <small class="text-muted">در بازه انتخاب‌شده — جمع هر درس جداگانه محاسبه می‌شود</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>درس</th>
+                    <th>کلاس</th>
+                    <th class="text-center">امتیاز خالص</th>
+                    <th class="text-center">مثبت</th>
+                    <th class="text-center">منفی</th>
+                    <th class="text-center">تعداد ثبت</th>
+                    <th class="text-center">آخرین ثبت</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($points['by_subject'] as $subjectPoint)
+                    <tr>
+                        <td><strong>{{ $subjectPoint['subject_name'] }}</strong></td>
+                        <td><small class="text-muted">{{ $subjectPoint['class_name'] }}</small></td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ $subjectPoint['total'] >= 0 ? 'success' : 'danger' }}">
+                                {{ $subjectPoint['total'] > 0 ? '+' : '' }}{{ $subjectPoint['total'] }}
+                            </span>
+                        </td>
+                        <td class="text-center text-success">+{{ $subjectPoint['positive'] }}</td>
+                        <td class="text-center text-danger">{{ $subjectPoint['negative'] }}</td>
+                        <td class="text-center text-muted">{{ $subjectPoint['count'] }}</td>
+                        <td class="text-center small text-muted">
+                            {{ $subjectPoint['last_entry_date'] ? jdate($subjectPoint['last_entry_date']) : '—' }}
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center text-muted">درسی برای این دانش‌آموز یافت نشد.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
     </div>
 </div>
 

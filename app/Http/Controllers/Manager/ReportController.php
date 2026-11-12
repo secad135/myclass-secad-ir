@@ -29,11 +29,35 @@ class ReportController extends Controller
         $toInput = $request->input('to');
 
         [$fromDate, $toDate] = $service->resolveDateRange($fromInput, $toInput, $quickFilter, $currentYear);
-        $ranking = $service->getClassRanking($class, $fromDate, $toDate);
-        $summary = $service->getClassSummary($class, $fromDate, $toDate);
-        $subjects = $class->classSubjects()->with('subject')->get()->pluck('subject.name')->filter()->values();
 
-        return view('admin.classes.report', compact('class', 'currentYear', 'fromDate', 'toDate', 'quickFilter', 'ranking', 'summary', 'subjects'));
+        $classSubjects = $class->classSubjects()->with('subject')->get();
+        $selectedSubjectId = $request->integer('subject');
+        $selectedSubject = $selectedSubjectId
+            ? $classSubjects->firstWhere('id', $selectedSubjectId)
+            : null;
+
+        $ranking = $selectedSubject
+            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate)
+            : $service->getClassRanking($class, $fromDate, $toDate);
+
+        $summary = $service->getClassSummary($class, $fromDate, $toDate);
+        $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
+        $subjects = $classSubjects->pluck('subject.name')->filter()->values();
+
+        return view('admin.classes.report', compact(
+            'class',
+            'currentYear',
+            'fromDate',
+            'toDate',
+            'quickFilter',
+            'ranking',
+            'summary',
+            'subjects',
+            'classSubjects',
+            'subjectSummaries',
+            'selectedSubjectId',
+            'selectedSubject'
+        ));
     }
 
     public function fullReport(Request $request, SchoolClass $class)
@@ -46,7 +70,9 @@ class ReportController extends Controller
 
         $ranking = $service->getClassRanking($class, $fromDate, $toDate);
         $summary = $service->getClassSummary($class, $fromDate, $toDate);
-        $subjects = $class->classSubjects()->with('subject')->get()->pluck('subject.name')->filter()->values();
+        $classSubjects = $class->classSubjects()->with('subject')->get();
+        $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
+        $subjects = $classSubjects->pluck('subject.name')->filter()->values();
 
         $students = $class->students()->orderBy('name')->get();
 
@@ -65,7 +91,7 @@ class ReportController extends Controller
             $absences = $service->getAbsenceDetails($student, $fromDate, $toDate);
             $examResults = $service->getExamResultsForStudent($student);
             $exerciseResults = $service->getExerciseResultsForStudent($student);
-            $subjectSummary = $service->getSubjectSummary($student);
+            $subjectSummary = $service->getSubjectSummary($student, $fromDate, $toDate);
             $groupedAttendance = $service->getGroupedAttendanceByDate($student, $class, $fromDate, $toDate);
 
             $stats = $row['stats'] ?? $service->getOverallStats($student, $fromDate, $toDate);
@@ -93,7 +119,7 @@ class ReportController extends Controller
             ];
         });
 
-        return view('admin.classes.full-report', compact('class', 'currentYear', 'fromDate', 'toDate', 'ranking', 'summary', 'subjects', 'studentDetails'));
+        return view('admin.classes.full-report', compact('class', 'currentYear', 'fromDate', 'toDate', 'ranking', 'summary', 'subjects', 'studentDetails', 'classSubjects', 'subjectSummaries'));
     }
 
     public function studentProfile(Request $request, User $student)

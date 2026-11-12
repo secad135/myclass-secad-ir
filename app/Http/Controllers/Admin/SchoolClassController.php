@@ -32,11 +32,21 @@ class SchoolClassController extends Controller
 
         [$fromDate, $toDate] = $service->resolveDateRange($fromInput, $toInput, $quickFilter, $currentYear);
 
-        $ranking = $service->getClassRanking($class, $fromDate, $toDate);
-        $summary = $service->getClassSummary($class, $fromDate, $toDate);
+        $classSubjects = $class->classSubjects()->with('subject')->get();
 
-        $subjects = $class->classSubjects()->with('subject')->get()
-            ->pluck('subject.name')
+        $selectedSubjectId = $request->integer('subject');
+        $selectedSubject   = $selectedSubjectId
+            ? $classSubjects->firstWhere('id', $selectedSubjectId)
+            : null;
+
+        $ranking = $selectedSubject
+            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate)
+            : $service->getClassRanking($class, $fromDate, $toDate);
+
+        $summary          = $service->getClassSummary($class, $fromDate, $toDate);
+        $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
+
+        $subjects = $classSubjects->pluck('subject.name')
             ->filter()
             ->values();
 
@@ -48,7 +58,11 @@ class SchoolClassController extends Controller
             'quickFilter',
             'ranking',
             'summary',
-            'subjects'
+            'subjects',
+            'classSubjects',
+            'subjectSummaries',
+            'selectedSubjectId',
+            'selectedSubject'
         ));
     }
     public function index()
@@ -240,8 +254,10 @@ class SchoolClassController extends Controller
         $ranking = $service->getClassRanking($class, $fromDate, $toDate);
         $summary = $service->getClassSummary($class, $fromDate, $toDate);
 
-        $subjects = $class->classSubjects()->with('subject')->get()
-            ->pluck('subject.name')
+        $classSubjects = $class->classSubjects()->with('subject')->get();
+        $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
+
+        $subjects = $classSubjects->pluck('subject.name')
             ->filter()
             ->values();
 
@@ -258,7 +274,7 @@ class SchoolClassController extends Controller
             $points            = $service->getPointsSummary($student, $fromDate, $toDate);
             $absences          = $service->getAbsenceDetails($student, $fromDate, $toDate);
             $examResults       = $service->getExamResultsForStudent($student);
-            $subjectSummary    = $service->getSubjectSummary($student);
+            $subjectSummary    = $service->getSubjectSummary($student, $fromDate, $toDate);
             $exerciseResults   = $service->getExerciseResultsForStudent($student);
             $groupedAttendance = $service->getGroupedAttendanceByDate($student, $class, $fromDate, $toDate); // ← جدید
 
@@ -296,7 +312,9 @@ class SchoolClassController extends Controller
             'ranking',
             'summary',
             'subjects',
-            'studentDetails'
+            'studentDetails',
+            'classSubjects',
+            'subjectSummaries'
         ));
     }
 }

@@ -144,13 +144,24 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                 <input type="text" name="to" class="form-control form-control-sm" value="{{ $quickFilter ? '' : jdate($toDate) }}" placeholder="1405/08/09" dir="ltr" data-jdp data-jdp-only-date>
             </div>
             <div class="col-md-2">
+                <label class="form-label small mb-1">درس</label>
+                <select name="subject" class="form-select form-select-sm" onchange="this.form.submit()">
+                    <option value="">همه دروس</option>
+                    @foreach($classSubjects as $cs)
+                        <option value="{{ $cs->id }}" @selected((int) $selectedSubjectId === $cs->id)>
+                            {{ $cs->subject?->name ?? '—' }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-2">
                 <button class="btn btn-primary btn-sm">اعمال فیلتر</button>
             </div>
-            <div class="col-md-6 text-md-end">
+            <div class="col-md-4 text-md-end">
                 <div class="btn-group btn-group-sm" role="group">
-                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'all']) }}" class="btn btn-outline-secondary {{ ($quickFilter ?? 'all') === 'all' ? 'active' : '' }}">همه (سال تحصیلی)</a>
-                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'this_month']) }}" class="btn btn-outline-secondary {{ $quickFilter === 'this_month' ? 'active' : '' }}">این ماه</a>
-                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'last_30_days']) }}" class="btn btn-outline-secondary {{ $quickFilter === 'last_30_days' ? 'active' : '' }}">۳۰ روز گذشته</a>
+                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'all', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ ($quickFilter ?? 'all') === 'all' ? 'active' : '' }}">همه (سال تحصیلی)</a>
+                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'this_month', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ $quickFilter === 'this_month' ? 'active' : '' }}">این ماه</a>
+                    <a href="{{ route($isManager ? 'manager.classes.report' : 'admin.classes.report', ['class' => $class, 'quick' => 'last_30_days', 'subject' => $selectedSubjectId]) }}" class="btn btn-outline-secondary {{ $quickFilter === 'last_30_days' ? 'active' : '' }}">۳۰ روز گذشته</a>
                 </div>
             </div>
         </form>
@@ -173,8 +184,14 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
     <div class="col-md-3">
         <div class="card text-center">
             <div class="card-body">
-                <div class="small text-muted">میانگین امتیاز</div>
-                <h3 class="mb-0 text-{{ $summary['avg_points'] >= 0 ? 'success' : 'danger' }}">{{ $summary['avg_points'] > 0 ? '+' : '' }}{{ $summary['avg_points'] }}</h3>
+                @if($selectedSubject)
+                    @php $selectedSubjectSummary = $subjectSummaries->firstWhere('class_subject_id', $selectedSubjectId); @endphp
+                    <div class="small text-muted">میانگین امتیاز درس {{ $selectedSubject->subject?->name ?? '—' }}</div>
+                    <h3 class="mb-0 text-{{ ($selectedSubjectSummary['avg_points'] ?? 0) >= 0 ? 'success' : 'danger' }}">{{ ($selectedSubjectSummary['avg_points'] ?? 0) > 0 ? '+' : '' }}{{ $selectedSubjectSummary['avg_points'] ?? 0 }}</h3>
+                @else
+                    <div class="small text-muted">میانگین جمع امتیاز دروس</div>
+                    <h3 class="mb-0 text-{{ $summary['avg_points'] >= 0 ? 'success' : 'danger' }}">{{ $summary['avg_points'] > 0 ? '+' : '' }}{{ $summary['avg_points'] }}</h3>
+                @endif
             </div>
         </div>
     </div>
@@ -197,10 +214,58 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
     </div>
 </div>
 
+{{-- امتیاز به تفکیک درس --}}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>امتیاز به تفکیک درس</strong>
+        <small class="text-muted">میانگین‌ها بر اساس همه دانش‌آموزان کلاس در بازه انتخابی</small>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>درس</th>
+                    <th class="text-center">میانگین خالص</th>
+                    <th class="text-center">میانگین مثبت</th>
+                    <th class="text-center">میانگین منفی</th>
+                    <th class="text-center">دانش‌آموزان دارای امتیاز</th>
+                    <th class="text-center">تعداد ثبت</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($subjectSummaries as $ss)
+                    <tr>
+                        <td><strong>{{ $ss['subject_name'] }}</strong></td>
+                        <td class="text-center">
+                            <span class="badge bg-{{ $ss['avg_points'] >= 0 ? 'success' : 'danger' }}">
+                                {{ $ss['avg_points'] > 0 ? '+' : '' }}{{ $ss['avg_points'] }}
+                            </span>
+                        </td>
+                        <td class="text-center text-success">+{{ $ss['avg_positive'] }}</td>
+                        <td class="text-center text-danger">{{ $ss['avg_negative'] }}</td>
+                        <td class="text-center">{{ $ss['students_with_points'] }} / {{ $summary['students_count'] }}</td>
+                        <td class="text-center text-muted">{{ $ss['count'] }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">درسی برای این کلاس تعریف نشده است.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header d-flex justify-content-between">
         <strong>جدول رتبه‌بندی</strong>
-        <small class="text-muted">مرتب‌شده بر اساس امتیاز، سپس درصد حضور</small>
+        <small class="text-muted">
+            @if($selectedSubject)
+                مرتب‌شده بر اساس امتیاز درس «{{ $selectedSubject->subject?->name ?? '—' }}»، سپس درصد حضور
+            @else
+                مرتب‌شده بر اساس جمع امتیاز دروس، سپس درصد حضور
+            @endif
+        </small>
     </div>
     <div class="table-responsive">
         <table class="table table-bordered align-middle mb-0">
@@ -208,7 +273,10 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                 <tr>
                     <th class="text-center" style="width: 60px;">رتبه</th>
                     <th>دانش‌آموز</th>
-                    <th class="text-center">امتیاز دستی</th>
+                    @foreach($classSubjects as $cs)
+                        <th class="text-center">{{ $cs->subject?->name ?? '—' }}</th>
+                    @endforeach
+                    <th class="text-center">جمع دروس</th>
                     <th class="text-center">درصد حضور</th>
                     <th class="text-center">غایب</th>
                     <th class="text-center">تاخیر</th>
@@ -230,13 +298,33 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                         <strong>{{ $row['student']->name }}</strong>
                         <br><small class="text-muted">{{ $row['student']->email }}</small>
                     </td>
+                    @foreach($classSubjects as $cs)
+                        @php
+                            $subjectPoint = $row['by_subject']->get($cs->id);
+                        @endphp
+                        <td class="text-center">
+                            @if($subjectPoint)
+                                <span class="badge bg-{{ $subjectPoint['total'] >= 0 ? 'success' : 'danger' }}" style="font-size: 0.9rem;">
+                                    {{ $subjectPoint['total'] > 0 ? '+' : '' }}{{ $subjectPoint['total'] }}
+                                </span>
+                                @if($subjectPoint['positive'] > 0 || $subjectPoint['negative'] < 0)
+                                    <br><small class="text-muted" style="font-size: 0.72rem;">
+                                        (<span class="text-success">+{{ $subjectPoint['positive'] }}</span> /
+                                        <span class="text-danger">{{ $subjectPoint['negative'] }}</span>)
+                                    </small>
+                                @endif
+                            @else
+                                <span class="text-muted">0</span>
+                            @endif
+                        </td>
+                    @endforeach
                     <td class="text-center">
                         <span class="badge bg-{{ $row['points'] >= 0 ? 'success' : 'danger' }}" style="font-size: 0.95rem;">{{ $row['points'] > 0 ? '+' : '' }}{{ $row['points'] }}</span>
                         @if($row['positive_sum'] > 0 || $row['negative_sum'] < 0)
                             <br><small class="text-muted" style="font-size: 0.75rem;">
                                 (<span class="text-success">+{{ $row['positive_sum'] }}</span> / <span class="text-danger">{{ $row['negative_sum'] }}</span>)
                             </small>
-                            @endif
+                        @endif
                     </td>
                     <td class="text-center"><span class="badge bg-{{ $pctColor }}">{{ $pct }}٪</span></td>
                     <td class="text-center">
@@ -266,7 +354,7 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="9" class="text-center text-muted py-4">برای این کلاس در این بازه هیچ داده‌ای وجود ندارد.</td>
+                    <td colspan="{{ 9 + $classSubjects->count() }}" class="text-center text-muted py-4">برای این کلاس در این بازه هیچ داده‌ای وجود ندارد.</td>
                 </tr>
                 @endforelse
             </tbody>

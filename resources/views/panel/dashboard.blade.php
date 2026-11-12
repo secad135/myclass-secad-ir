@@ -64,16 +64,27 @@
 
     <!-- کارت‌های آماری -->
     <div class="row g-3 mb-4">
-        <!-- امتیاز کل -->
+        <!-- امتیاز به تفکیک درس -->
         <div class="col-md-4">
-            <a href="{{ route('panel.points') }}" class="card stat-card gradient-points shadow-sm">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <div class="opacity-75 small fw-bold mb-1">امتیاز کل</div>
-                        <h2 class="mb-0 fw-bold">{{ $points['total'] > 0 ? '+' : '' }}{{ $points['total'] }}</h2>
-                        <small class="opacity-75">برای مشاهده جزئیات کلیک کنید</small>
+            <a href="{{ route('panel.points') }}" class="card stat-card gradient-points shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="opacity-75 small fw-bold">امتیاز به تفکیک درس</div>
+                        <div class="stat-icon">⭐</div>
                     </div>
-                    <div class="stat-icon">⭐</div>
+                    @forelse($points['by_subject']->take(3) as $subjectPoint)
+                        <div class="d-flex justify-content-between align-items-center small mb-1">
+                            <span class="opacity-90">{{ $subjectPoint['subject_name'] }}</span>
+                            <strong>{{ $subjectPoint['total'] > 0 ? '+' : '' }}{{ $subjectPoint['total'] }}</strong>
+                        </div>
+                    @empty
+                        <div class="small opacity-75">هنوز امتیازی ثبت نشده است.</div>
+                    @endforelse
+                    <div class="border-top border-light pt-2 mt-2 d-flex justify-content-between align-items-center small">
+                        <span class="opacity-75">جمع دروس</span>
+                        <strong>{{ $points['total'] > 0 ? '+' : '' }}{{ $points['total'] }}</strong>
+                    </div>
+                    <small class="opacity-75 d-block mt-2">برای مشاهده جزئیات کلیک کنید</small>
                 </div>
             </a>
         </div>
