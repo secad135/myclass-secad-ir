@@ -202,7 +202,7 @@
 
 @endsection
 
-@section('scripts')
+@push('scripts')
 <script>
 (function () {
     'use strict';
@@ -244,14 +244,30 @@
         try {
             const temp = document.createElement('textarea');
             temp.value = text;
-            temp.style.position = 'fixed';
-            temp.style.top = '0';
-            temp.style.left = '-9999px';
-            temp.style.opacity = '0';
+            temp.setAttribute('readonly', '');
+
+            // باید داخل کادر دید باشد؛ متن روی صفحه دیده نمی‌شود ولی انتخاب/کپی موبایل کار می‌کند
+            temp.style.cssText = [
+                'position:fixed',
+                'top:0',
+                'left:0',
+                'width:2em',
+                'height:2em',
+                'padding:0',
+                'border:0',
+                'outline:none',
+                'box-shadow:none',
+                'background:transparent',
+                'opacity:0.01',
+                'font-size:16px',
+                'z-index:999999'
+            ].join(';');
+
             document.body.appendChild(temp);
-            temp.focus();
+            temp.focus({ preventScroll: true });
             temp.select();
             temp.setSelectionRange(0, text.length);
+
             const ok = document.execCommand('copy');
             document.body.removeChild(temp);
             return ok;
@@ -284,4 +300,4 @@
     });
 })();
 </script>
-@endsection
+@endpush
