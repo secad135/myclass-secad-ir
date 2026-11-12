@@ -108,18 +108,7 @@
                                                     <span class="badge bg-danger rounded-pill" title="تعداد خروج از صفحه">{{ $att->tab_switches }} ⚠️</span>
                                                 @endif
                                             </a>
-                                            @if(auth()->user()?->is_admin)
-                                            <form action="{{ route('admin.exams.attempts.destroy', [$exam, $att]) }}" method="POST"
-                                                  class="d-inline"
-                                                  onsubmit="return confirm('تلاش #{{ $att->attempt_number }} دانش‌آموز «{{ $row['student']->name }}» حذف شود؟ این کار قابل بازگشت نیست.');">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1"
-                                                        title="حذف این تلاش">
-                                                    🗑️
-                                                </button>
-                                            </form>
-                                            @endif
+                                            
                                         @endforeach
                                     </div>
                                 @endif
