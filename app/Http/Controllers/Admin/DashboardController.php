@@ -12,6 +12,7 @@ use App\Models\Grade;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -63,14 +64,18 @@ class DashboardController extends Controller
             ->count();
 
         // پاکسازی لاگ‌های قدیمی‌تر از ۷ روز (خودکار در هر بار لود داشبورد)
-        \App\Models\ActivityLog::cleanup(7);
+        $recentActivities = collect();
 
-        // آخرین ۳۰ فعالیت دانش‌آموزان در ۷ روز اخیر
-        $recentActivities = \App\Models\ActivityLog::with('user')
-            ->recent(7)
-            ->orderByDesc('created_at')
-            ->limit(30)
-            ->get();
+        if (Schema::hasTable('activity_logs')) {
+            \App\Models\ActivityLog::cleanup(7);
+
+            // آخرین ۳۰ فعالیت دانش‌آموزان در ۷ روز اخیر
+            $recentActivities = \App\Models\ActivityLog::with('user')
+                ->recent(7)
+                ->orderByDesc('created_at')
+                ->limit(30)
+                ->get();
+        }
 
         return view('admin.dashboard', compact(
             'stats', 'currentYear', 'classSubjects',

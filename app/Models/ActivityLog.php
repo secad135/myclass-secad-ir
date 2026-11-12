@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Schema;
 
 class ActivityLog extends Model
 {
@@ -20,6 +21,10 @@ class ActivityLog extends Model
 
     public static function cleanup(int $days = 7): int
     {
+        if (!Schema::hasTable('activity_logs')) {
+            return 0;
+        }
+
         return static::where('created_at', '<', now()->subDays($days))->delete();
     }
 }
