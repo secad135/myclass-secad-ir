@@ -132,11 +132,12 @@ class StudentReportService
     /**
      * خلاصه امتیازات دستی در بازه
      */
-    public function getPointsSummary(User $student, string $fromDate, string $toDate): array
+    public function getPointsSummary(User $student, string $fromDate, string $toDate, ?array $onlyClassSubjectIds = null): array
     {
         $entries = PointEntry::query()
             ->where('student_id', $student->id)
             ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->when($onlyClassSubjectIds !== null, fn ($q) => $q->whereIn('class_subject_id', $onlyClassSubjectIds))
             ->with(['category', 'classSubject.subject', 'createdBy'])
             ->orderByDesc('entry_date')
             ->orderByDesc('id')
@@ -148,7 +149,7 @@ class StudentReportService
             'positive'    => (int) $entries->where('points', '>', 0)->sum('points'),
             'negative'    => (int) $entries->where('points', '<', 0)->sum('points'),
             'count'       => $entries->count(),
-            'by_subject'  => $this->getPointsSummaryBySubject($student, $fromDate, $toDate, $entries),
+            'by_subject'  => $this->getPointsSummaryBySubject($student, $fromDate, $toDate, $entries, $onlyClassSubjectIds),
         ];
     }
 
@@ -162,11 +163,13 @@ class StudentReportService
         User $student,
         string $fromDate,
         string $toDate,
-        ?Collection $entries = null
+        ?Collection $entries = null,
+        ?array $onlyClassSubjectIds = null
     ): Collection {
         $entries ??= PointEntry::query()
             ->where('student_id', $student->id)
             ->whereBetween('entry_date', [$fromDate, $toDate])
+            ->when($onlyClassSubjectIds !== null, fn ($q) => $q->whereIn('class_subject_id', $onlyClassSubjectIds))
             ->with(['classSubject.subject', 'classSubject.schoolClass'])
             ->orderByDesc('entry_date')
             ->orderByDesc('id')
@@ -176,7 +179,7 @@ class StudentReportService
         $subjectIds = $entriesBySubject->keys()->filter()->values()->all();
 
         $classSubjects = ClassSubject::query()
-            ->where(function ($q) use ($student, $subjectIds) {
+            ->where(function ($q) use ($student, $subjectIds, $onlyClassSubjectIds) {
                 $q->whereHas('schoolClass.students', function ($q2) use ($student) {
                     $q2->where('users.id', $student->id);
                 });
@@ -185,6 +188,7 @@ class StudentReportService
                     $q->orWhereIn('id', $subjectIds);
                 }
             })
+            ->when($onlyClassSubjectIds !== null, fn ($q) => $q->whereIn('id', $onlyClassSubjectIds))
             ->with(['subject', 'schoolClass'])
             ->get();
 
@@ -210,13 +214,14 @@ class StudentReportService
     /**
      * ریز غیبت‌ها، تاخیرها و ترک کلاس‌ها در بازه
      */
-    public function getAbsenceDetails(User $student, string $fromDate, string $toDate): Collection
+    public function getAbsenceDetails(User $student, string $fromDate, string $toDate, ?array $onlyClassSubjectIds = null): Collection
     {
         return Attendance::query()
             ->where('student_id', $student->id)
             ->whereIn('status', ['absent', 'late', 'left'])
-            ->whereHas('attendanceDay', function ($q) use ($fromDate, $toDate) {
-                $q->whereBetween('date', [$fromDate, $toDate]);
+            ->whereHas('attendanceDay', function ($q) use ($fromDate, $toDate, $onlyClassSubjectIds) {
+                $q->whereBetween('date', [$fromDate, $toDate])
+                    ->when($onlyClassSubjectIds !== null, fn ($q2) => $q2->whereIn('class_subject_id', $onlyClassSubjectIds));
             })
             ->with(['attendanceDay.classSubject.subject'])
             ->get()
@@ -456,12 +461,13 @@ class StudentReportService
      * خلاصه به تفکیک درس (برای گزارش کامل)
      * شامل: حضور، غایب، امتیاز دستی، میانگین آزمون‌ها، وضعیت
      */
-    public function getSubjectSummary(User $student, ?string $fromDate = null, ?string $toDate = null): Collection
+    public function getSubjectSummary(User $student, ?string $fromDate = null, ?string $toDate = null, ?array $onlyClassSubjectIds = null): Collection
     {
         $classSubjects = ClassSubject::query()
             ->whereHas('schoolClass.students', function ($q) use ($student) {
                 $q->where('users.id', $student->id);
             })
+            ->when($onlyClassSubjectIds !== null, fn ($q) => $q->whereIn('id', $onlyClassSubjectIds))
             ->with(['subject', 'schoolClass'])
             ->get();
 
@@ -639,12 +645,14 @@ class StudentReportService
     public function getGroupedAttendanceByClassSubject(
         User $student,
         string $fromDate,
-        string $toDate
+        string $toDate,
+        ?array $onlyClassSubjectIds = null
     ): Collection {
         $classSubjects = ClassSubject::query()
             ->whereHas('schoolClass.students', function ($q) use ($student) {
                 $q->where('users.id', $student->id);
             })
+            ->when($onlyClassSubjectIds !== null, fn ($q) => $q->whereIn('id', $onlyClassSubjectIds))
             ->with(['subject', 'schoolClass.school'])
             ->get();
 

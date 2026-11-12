@@ -1,6 +1,11 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
-@section('title', 'دانش‌آموزان')
+@section('title', $isTeacher ? 'دانش‌آموزان من' : 'دانش‌آموزان')
 
 @section('head')
 <style>
@@ -51,11 +56,15 @@
 @section('content')
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">دانش‌آموزان</h4>
-        <div class="d-flex gap-2">
-            <a href="{{ route('admin.students.credentials') }}" class="btn btn-warning">🔑 برگه اطلاعات ورود</a>
-            <a href="{{ route('admin.students.create') }}" class="btn btn-primary">➕ افزودن دانش‌آموز</a>
-        </div>
+        <h4 class="mb-0">{{ $isTeacher ? 'دانش‌آموزان من' : 'دانش‌آموزان' }}</h4>
+        @if($isTeacher)
+            <span class="text-muted small">فقط دانش‌آموزان کلاس‌هایی که در آن‌ها درس می‌دهید.</span>
+        @else
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.students.credentials') }}" class="btn btn-warning">🔑 برگه اطلاعات ورود</a>
+                <a href="{{ route('admin.students.create') }}" class="btn btn-primary">➕ افزودن دانش‌آموز</a>
+            </div>
+        @endif
     </div>
 
     <table class="table table-bordered align-middle bg-white mobile-cards">
@@ -76,13 +85,15 @@
                     <td data-label="ایمیل" dir="ltr"><small>{{ $student->email }}</small></td>
                     <td data-label="تعداد کلاس">{{ $student->enrollments_count }}</td>
                     <td data-label="عملیات">
-                        <a href="{{ route('admin.students.show', $student) }}" class="btn btn-sm btn-info">وضعیت کلی</a>
-                        <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-sm btn-warning">ویرایش</a>
-                        <form action="{{ route('admin.students.destroy', $student) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟')">حذف</button>
-                        </form>
+                        <a href="{{ route($panelPrefix . '.students.show', $student) }}" class="btn btn-sm btn-info">وضعیت کلی</a>
+                        @if(!$isTeacher)
+                            <a href="{{ route('admin.students.edit', $student) }}" class="btn btn-sm btn-warning">ویرایش</a>
+                            <form action="{{ route('admin.students.destroy', $student) }}" method="POST" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟')">حذف</button>
+                            </form>
+                        @endif
                     </td>
                 </tr>
             @empty

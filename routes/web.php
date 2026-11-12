@@ -153,6 +153,14 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         Route::get('profile', [\App\Http\Controllers\Teacher\ProfileController::class, 'edit'])->name('profile');
         Route::patch('profile', [\App\Http\Controllers\Teacher\ProfileController::class, 'update'])->name('profile.update');
         Route::put('profile/password', [\App\Http\Controllers\Teacher\ProfileController::class, 'updatePassword'])->name('profile.password');
+
+        // کلاس‌های معلم
+        Route::get('classes', [\App\Http\Controllers\Teacher\SchoolClassController::class, 'index'])->name('classes.index');
+        Route::get('classes/{class}', [\App\Http\Controllers\Teacher\SchoolClassController::class, 'show'])->name('classes.show');
+
+        // دانش‌آموزان کلاس‌های معلم
+        Route::get('students', [\App\Http\Controllers\Teacher\StudentController::class, 'index'])->name('students.index');
+        Route::get('students/{student}', [\App\Http\Controllers\Teacher\StudentController::class, 'show'])->name('students.show');
     });
 
 // ==================== پنل دانش‌آموز ====================

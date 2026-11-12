@@ -269,18 +269,18 @@ ALTER TABLE `exercises`
 **commit:** `feat(teacher): add teacher panel shell and profile`
 
 ### ۶.۶ کلاس‌ها و دانش‌آموزان معلم
-- [ ] `Teacher\SchoolClassController@index/show` فقط کلاس‌های خودش
-- [ ] `Teacher\StudentController@index/show` فقط دانش‌آموزان کلاس‌های خودش
-- [ ] استفاده از `StudentReportService` با فیلتر `classSubjectIds` کلاس‌های معلم
-- [ ] گسترش متدهای سرویس در صورت نیاز:
+- [x] `Teacher\SchoolClassController@index/show` فقط کلاس‌های خودش
+- [x] `Teacher\StudentController@index/show` فقط دانش‌آموزان کلاس‌های خودش
+- [x] استفاده از `StudentReportService` با فیلتر `classSubjectIds` کلاس‌های معلم
+- [x] گسترش متدهای سرویس در صورت نیاز:
   - `getPointsSummary(..., ?array $onlyClassSubjectIds = null)`
   - `getAbsenceDetails(..., ?array $onlyClassSubjectIds = null)`
   - `getGroupedAttendanceByClassSubject(..., ?array $onlyClassSubjectIds = null)`
   - `getSubjectSummary(..., ?array $onlyClassSubjectIds = null)`
-- [ ] در `students/show` برچسب «وضعیت در کلاس‌های شما» و حذف لینک‌های غیرمجاز
-- [ ] در `classes/show` لینک حضور فقط برای درس‌های خود معلم + نمایش معلم هر درس
-- [ ] مخفی کردن CRUD ادمین در ویوهای مشترک برای معلم
-- [ ] تست: معلم کلاس دیگر → 403
+- [x] در `students/show` برچسب «وضعیت در کلاس‌های شما» و حذف لینک‌های غیرمجاز
+- [x] در `classes/show` لینک حضور فقط برای درس‌های خود معلم + نمایش معلم هر درس
+- [x] مخفی کردن CRUD ادمین در ویوهای مشترک برای معلم
+- [x] تست: معلم کلاس دیگر → 403
 
 **commit:** `feat(teacher): scope classes and students to teacher`
 
@@ -474,7 +474,7 @@ ALTER TABLE `exercises`
 | تخصیص معلم به درس | ✅ | - | |
 | layout و اسکلت پنل معلم | ✅ | - | layout معلم + route group + auth/teacher/password.changed |
 | داشبورد و پروفایل معلم | ✅ | - | داشبورد اختصاصی + پروفایل تغییر رمز |
-| کلاس‌ها و دانش‌آموزان معلم | ⬜ | - | |
+| کلاس‌ها و دانش‌آموزان معلم | ✅ | - | scope کلاس/دانش‌آموز + فیلتر سرویس گزارش |
 | حضور/غیاب و امتیاز معلم | ⬜ | - | |
 | آزمون‌های معلم | ⬜ | - | |
 | تمرین‌های معلم | ⬜ | - | |

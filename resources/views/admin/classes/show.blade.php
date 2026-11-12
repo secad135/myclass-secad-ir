@@ -1,4 +1,9 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
 @section('title', 'کلاس ' . $class->name)
 
@@ -112,8 +117,10 @@
             </small>
         </div>
         <div class="d-flex gap-2">
-            <a href="{{ route('admin.classes.report', $class) }}" class="btn btn-primary">📊 گزارش کلاس</a>
-            <a href="{{ route('admin.classes.index') }}" class="btn btn-secondary">بازگشت</a>
+            @if(Route::has($panelPrefix . '.classes.report'))
+                <a href="{{ route($panelPrefix . '.classes.report', $class) }}" class="btn btn-primary">📊 گزارش کلاس</a>
+            @endif
+            <a href="{{ route($panelPrefix . '.classes.index') }}" class="btn btn-secondary">بازگشت</a>
         </div>
     </div>
 
@@ -126,7 +133,9 @@
                 <th>نام</th>
                 <th>ایمیل</th>
                 <th>وضعیت</th>
-                <th>عملیات</th>
+                @if(!$isTeacher)
+                    <th>عملیات</th>
+                @endif
             </tr>
         </thead>
         <tbody>
@@ -135,35 +144,39 @@
                     <td>{{ $student->id }}</td>
                     <td>
                         {{ $student->name }}
-                        <a href="{{ route('admin.students.show', $student) }}" class="text-decoration-none small" title="مشاهده وضعیت">📋</a>
+                        <a href="{{ route($panelPrefix . '.students.show', $student) }}" class="text-decoration-none small" title="مشاهده وضعیت">📋</a>
                     </td>
                     <td dir="ltr"><small>{{ $student->email }}</small></td>
                     <td>{{ $student->pivot->status }}</td>
-                    <td>
-                        <form action="{{ route('admin.classes.unenroll', [$class, $student]) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟')">حذف از کلاس</button>
-                        </form>
-                    </td>
+                    @if(!$isTeacher)
+                        <td>
+                            <form action="{{ route('admin.classes.unenroll', [$class, $student]) }}" method="POST" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟')">حذف از کلاس</button>
+                            </form>
+                        </td>
+                    @endif
                 </tr>
             @empty
-                <tr><td colspan="5" class="text-center text-muted">هیچ دانش‌آموزی در این کلاس نیست.</td></tr>
+                <tr><td colspan="{{ $isTeacher ? 4 : 5 }}" class="text-center text-muted">هیچ دانش‌آموزی در این کلاس نیست.</td></tr>
             @endforelse
         </tbody>
     </table>
 
-    <h5 class="mt-4">افزودن دانش‌آموز به کلاس</h5>
-    <form action="{{ route('admin.classes.enroll', $class) }}" method="POST" class="d-flex gap-2 mb-4">
-        @csrf
-        <select name="student_id" class="form-select">
-            <option value="">— انتخاب دانش‌آموز —</option>
-            @foreach($availableStudents as $student)
-                <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->email }})</option>
-            @endforeach
-        </select>
-        <button class="btn btn-primary">افزودن</button>
-    </form>
+    @if(!$isTeacher)
+        <h5 class="mt-4">افزودن دانش‌آموز به کلاس</h5>
+        <form action="{{ route('admin.classes.enroll', $class) }}" method="POST" class="d-flex gap-2 mb-4">
+            @csrf
+            <select name="student_id" class="form-select">
+                <option value="">— انتخاب دانش‌آموز —</option>
+                @foreach($availableStudents as $student)
+                    <option value="{{ $student->id }}">{{ $student->name }} ({{ $student->email }})</option>
+                @endforeach
+            </select>
+            <button class="btn btn-primary">افزودن</button>
+        </form>
+    @endif
 
     <hr class="my-4">
 
@@ -197,17 +210,21 @@
                         @endif
                     </td>
                     <td>
-                        <form action="{{ route('admin.classes.subjects.teacher.update', [$class, $cs]) }}" method="POST" class="d-flex gap-1">
-                            @csrf
-                            @method('PUT')
-                            <select name="teacher_id" class="form-select form-select-sm">
-                                <option value="">— بدون معلم —</option>
-                                @foreach($teachers as $teacher)
-                                    <option value="{{ $teacher->id }}" @selected($cs->teacher_id == $teacher->id)>{{ $teacher->name }}</option>
-                                @endforeach
-                            </select>
-                            <button class="btn btn-sm btn-outline-primary" title="ثبت معلم">ثبت</button>
-                        </form>
+                        @if($isTeacher)
+                            {{ $cs->teacher?->name ?? '—' }}
+                        @else
+                            <form action="{{ route('admin.classes.subjects.teacher.update', [$class, $cs]) }}" method="POST" class="d-flex gap-1">
+                                @csrf
+                                @method('PUT')
+                                <select name="teacher_id" class="form-select form-select-sm">
+                                    <option value="">— بدون معلم —</option>
+                                    @foreach($teachers as $teacher)
+                                        <option value="{{ $teacher->id }}" @selected($cs->teacher_id == $teacher->id)>{{ $teacher->name }}</option>
+                                    @endforeach
+                                </select>
+                                <button class="btn btn-sm btn-outline-primary" title="ثبت معلم">ثبت</button>
+                            </form>
+                        @endif
                     </td>
                     <td>{{ $cs->subject?->sessions_per_day }}</td>
                     <td>
@@ -223,6 +240,7 @@
                         <small class="d-block text-muted mt-1">
                             شروع از زنگ {{ $cs->default_start_period ?? 1 }}
                         </small>
+                        @if(!$isTeacher)
                         <details>
                             <summary class="small text-primary" style="cursor:pointer;">✏️ ویرایش روزها و زنگ</summary>
                             <form action="{{ route('admin.classes.subjects.days.update', [$class, $cs]) }}" method="POST" class="mt-2 d-flex flex-wrap gap-2 align-items-center">
@@ -245,14 +263,21 @@
                                 <button class="btn btn-sm btn-outline-primary">ذخیره</button>
                             </form>
                         </details>
+                        @endif
                     </td>
                     <td>
-                        <a href="{{ route('admin.attendance.show', $cs) }}" class="btn btn-sm btn-success">حضور و غیاب</a>
-                        <form action="{{ route('admin.classes.subjects.remove', [$class, $cs]) }}" method="POST" class="d-inline">
-                            @csrf
-                            @method('DELETE')
-                            <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟')">حذف</button>
-                        </form>
+                        @if(!$isTeacher || (int) $cs->teacher_id === (int) auth()->id())
+                            @if(Route::has($panelPrefix . '.attendance.show'))
+                                <a href="{{ route($panelPrefix . '.attendance.show', $cs) }}" class="btn btn-sm btn-success">حضور و غیاب</a>
+                            @endif
+                        @endif
+                        @if(!$isTeacher)
+                            <form action="{{ route('admin.classes.subjects.remove', [$class, $cs]) }}" method="POST" class="d-inline">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-danger" onclick="return confirm('حذف شود؟')">حذف</button>
+                            </form>
+                        @endif
                     </td>
                 </tr>
             @empty
@@ -261,35 +286,37 @@
         </tbody>
     </table>
 
-    <h5 class="mt-4">افزودن درس به کلاس</h5>
+    @if(!$isTeacher)
+        <h5 class="mt-4">افزودن درس به کلاس</h5>
 
-    @if($availableSubjects->isEmpty())
-        <div class="alert alert-info">
-            همه درس‌های موجود به این کلاس اضافه شده‌اند یا هنوز درسی تعریف نکرده‌اید.
-            <a href="{{ route('admin.subjects.create') }}">افزودن درس جدید</a>
-        </div>
-    @else
-        <form action="{{ route('admin.classes.subjects.add', $class) }}" method="POST" class="d-flex gap-2 mb-4">
-            @csrf
-            <select name="subject_id" class="form-select">
-                <option value="">— انتخاب درس —</option>
-                @foreach($availableSubjects as $subject)
-                    <option value="{{ $subject->id }}">{{ $subject->name }} ({{ $subject->typeLabel() }} - {{ $subject->sessions_per_day }} جلسه)</option>
-                @endforeach
-            </select>
-            <select name="default_start_period" class="form-select" style="max-width: 160px;">
-                @for($i = 1; $i <= 4; $i++)
-                    <option value="{{ $i }}" @selected($i === 1)>شروع از زنگ {{ $i }}</option>
-                @endfor
-            </select>
-            <select name="teacher_id" class="form-select" style="max-width: 220px;">
-                <option value="">— معلم (اختیاری) —</option>
-                @foreach($teachers as $teacher)
-                    <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
-                @endforeach
-            </select>
-            <button class="btn btn-primary">افزودن</button>
-        </form>
+        @if($availableSubjects->isEmpty())
+            <div class="alert alert-info">
+                همه درس‌های موجود به این کلاس اضافه شده‌اند یا هنوز درسی تعریف نکرده‌اید.
+                <a href="{{ route('admin.subjects.create') }}">افزودن درس جدید</a>
+            </div>
+        @else
+            <form action="{{ route('admin.classes.subjects.add', $class) }}" method="POST" class="d-flex gap-2 mb-4">
+                @csrf
+                <select name="subject_id" class="form-select">
+                    <option value="">— انتخاب درس —</option>
+                    @foreach($availableSubjects as $subject)
+                        <option value="{{ $subject->id }}">{{ $subject->name }} ({{ $subject->typeLabel() }} - {{ $subject->sessions_per_day }} جلسه)</option>
+                    @endforeach
+                </select>
+                <select name="default_start_period" class="form-select" style="max-width: 160px;">
+                    @for($i = 1; $i <= 4; $i++)
+                        <option value="{{ $i }}" @selected($i === 1)>شروع از زنگ {{ $i }}</option>
+                    @endfor
+                </select>
+                <select name="teacher_id" class="form-select" style="max-width: 220px;">
+                    <option value="">— معلم (اختیاری) —</option>
+                    @foreach($teachers as $teacher)
+                        <option value="{{ $teacher->id }}">{{ $teacher->name }}</option>
+                    @endforeach
+                </select>
+                <button class="btn btn-primary">افزودن</button>
+            </form>
+        @endif
     @endif
 
 @endsection

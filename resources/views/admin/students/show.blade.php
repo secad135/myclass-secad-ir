@@ -1,6 +1,8 @@
 @php
-$isManager = auth()->user()->is_school_manager;
-$layout = $isManager ? 'layouts.manager' : 'layouts.admin';
+$isTeacher = auth()->user()->is_teacher;
+$isManager = !$isTeacher && auth()->user()->is_school_manager;
+$panelPrefix = $isTeacher ? 'teacher' : ($isManager ? 'manager' : 'admin');
+$layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'layouts.admin');
 @endphp
 @extends($layout)
 
@@ -139,19 +141,20 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
         <h5 class="text-muted mb-0">{{ $student->name }} — {{ $student->email }}</h5>
     </div>
     @php
-        $backRoute = route('manager.dashboard');
+        $backRoute = route($panelPrefix . '.dashboard');
         $backText = 'بازگشت به داشبورد';
         $classId = request('class_id');
 
-        if ($classId) {
+        if ($classId && Route::has($panelPrefix . '.classes.report')) {
             $classModel = \App\Models\SchoolClass::find($classId);
             if ($classModel) {
-                $backRoute = auth()->user()->is_school_manager 
-                    ? route('manager.classes.report', $classModel) 
-                    : route('admin.classes.report', $classModel);
+                $backRoute = route($panelPrefix . '.classes.report', $classModel);
                 $backText = 'بازگشت به گزارش کلاس';
             }
-        } elseif (!auth()->user()->is_school_manager) {
+        } elseif ($isTeacher) {
+            $backRoute = route('teacher.students.index');
+            $backText = 'بازگشت به لیست دانش‌آموزان';
+        } elseif (!$isManager) {
             $backRoute = route('admin.students.index');
             $backText = 'بازگشت به لیست دانش‌آموزان';
         }
@@ -159,11 +162,12 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
     <a href="{{ $backRoute }}" class="btn btn-secondary">{{ $backText }}</a>
         @php
             $classIdForPrint = request('class_id') ?? $student->classes()->first()?->id;
-            $printRoute = auth()->user()->is_school_manager 
-                ? route('manager.classes.full-report', ['class' => $classIdForPrint, 'student_id' => $student->id])
-                : route('admin.classes.full-report', ['class' => $classIdForPrint, 'student_id' => $student->id]);
+            $printRoute = null;
+            if ($classIdForPrint && Route::has($panelPrefix . '.classes.full-report')) {
+                $printRoute = route($panelPrefix . '.classes.full-report', ['class' => $classIdForPrint, 'student_id' => $student->id]);
+            }
         @endphp
-        @if($classIdForPrint)
+        @if($printRoute)
             <a href="{{ $printRoute }}" class="btn btn-outline-success me-2" target="_blank">
                 🖨️ چاپ کارنامه
             </a>
@@ -172,7 +176,7 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
 
 <div class="card mb-3">
     <div class="card-body">
-        <form method="GET" action="{{ $isManager ? route('manager.students.show', $student) : route('admin.students.show', $student) }}" class="row g-2 align-items-end">
+        <form method="GET" action="{{ route($panelPrefix . '.students.show', $student) }}" class="row g-2 align-items-end">
             <div class="col-md-2">
                 <label class="form-label small mb-1">از تاریخ (شمسی)</label>
                 <input type="text" name="from" class="form-control form-control-sm" value="{{ $quickFilter ? '' : jdate($fromDate) }}" placeholder="1405/07/01" dir="ltr" data-jdp data-jdp-only-date>
@@ -186,9 +190,9 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
             </div>
             <div class="col-md-6 text-md-end">
                 <div class="btn-group btn-group-sm" role="group">
-                    <a href="{{ route($isManager ? 'manager.students.show' : 'admin.students.show', ['student' => $student, 'quick' => 'all']) }}" class="btn btn-outline-secondary {{ ($quickFilter ?? 'all') === 'all' ? 'active' : '' }}">همه (سال تحصیلی)</a>
-                    <a href="{{ route($isManager ? 'manager.students.show' : 'admin.students.show', ['student' => $student, 'quick' => 'this_month']) }}" class="btn btn-outline-secondary {{ $quickFilter === 'this_month' ? 'active' : '' }}">این ماه</a>
-                    <a href="{{ route($isManager ? 'manager.students.show' : 'admin.students.show', ['student' => $student, 'quick' => 'last_30_days']) }}" class="btn btn-outline-secondary {{ $quickFilter === 'last_30_days' ? 'active' : '' }}">۳۰ روز گذشته</a>
+                    <a href="{{ route($panelPrefix . '.students.show', ['student' => $student, 'quick' => 'all']) }}" class="btn btn-outline-secondary {{ ($quickFilter ?? 'all') === 'all' ? 'active' : '' }}">همه (سال تحصیلی)</a>
+                    <a href="{{ route($panelPrefix . '.students.show', ['student' => $student, 'quick' => 'this_month']) }}" class="btn btn-outline-secondary {{ $quickFilter === 'this_month' ? 'active' : '' }}">این ماه</a>
+                    <a href="{{ route($panelPrefix . '.students.show', ['student' => $student, 'quick' => 'last_30_days']) }}" class="btn btn-outline-secondary {{ $quickFilter === 'last_30_days' ? 'active' : '' }}">۳۰ روز گذشته</a>
                 </div>
             </div>
         </form>
@@ -343,8 +347,8 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                         @endif
                     </td>
                     <td class="text-center">
-                        @if($best && !$isManager)
-                        <a href="{{ route('admin.exams.attempt-detail', [$exam, $best]) }}"
+                        @if($best && !$isManager && Route::has($panelPrefix . '.exams.attempt-detail'))
+                        <a href="{{ route($panelPrefix . '.exams.attempt-detail', [$exam, $best]) }}"
                             class="btn btn-sm btn-outline-info">مشاهده</a>
                         @endif
                     </td>
@@ -431,8 +435,8 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                         @endif
                     </td>
                     <td class="text-center">
-                        @if($sub && !$isManager)
-                        <a href="{{ route('admin.exercises.submissions', $exercise) }}"
+                        @if($sub && !$isManager && Route::has($panelPrefix . '.exercises.submissions'))
+                        <a href="{{ route($panelPrefix . '.exercises.submissions', $exercise) }}"
                             class="btn btn-sm btn-outline-info">مشاهده</a>
                         @endif
                     </td>
