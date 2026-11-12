@@ -1,6 +1,11 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
-@section('title', 'آزمون‌ها')
+@section('title', $isTeacher ? 'آزمون‌های من' : 'آزمون‌ها')
 
 @section('head')
 <style>
@@ -47,8 +52,8 @@
 @section('content')
 
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4 class="mb-0">آزمون‌ها</h4>
-        <a href="{{ route('admin.exams.create') }}" class="btn btn-primary">➕ ساخت آزمون جدید</a>
+        <h4 class="mb-0">{{ $isTeacher ? 'آزمون‌های من' : 'آزمون‌ها' }}</h4>
+        <a href="{{ route($panelPrefix . '.exams.create') }}" class="btn btn-primary">➕ ساخت آزمون جدید</a>
     </div>
 
     <table class="table table-bordered align-middle bg-white mobile-cards">
@@ -92,9 +97,9 @@
                         <span class="badge bg-{{ $status['color'] }}">{{ $status['label'] }}</span>
                     </td>
                     <td data-label="عملیات">
-                        <a href="{{ route('admin.exams.results', $exam) }}" class="btn btn-sm btn-info">📊 نتایج</a>
-                        <a href="{{ route('admin.exams.edit', $exam) }}" class="btn btn-sm btn-warning">ویرایش</a>
-                        <form action="{{ route('admin.exams.destroy', $exam) }}" method="POST" class="d-inline">
+                        <a href="{{ route($panelPrefix . '.exams.results', $exam) }}" class="btn btn-sm btn-info">📊 نتایج</a>
+                        <a href="{{ route($panelPrefix . '.exams.edit', $exam) }}" class="btn btn-sm btn-warning">ویرایش</a>
+                        <form action="{{ route($panelPrefix . '.exams.destroy', $exam) }}" method="POST" class="d-inline">
                             @csrf
                             @method('DELETE')
                             <button class="btn btn-sm btn-danger"

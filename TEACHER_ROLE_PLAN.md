@@ -299,15 +299,15 @@ ALTER TABLE `exercises`
 ## ۷. فاز ۲ — آزمون، تمرین، سوال، مبحث، گزارش
 
 ### ۱.۷ آزمون‌ها
-- [ ] `Teacher\ExamController`: index/create/store/edit/update/destroy/results/attemptDetail/approveScore
-- [ ] فیلتر index به `class_subject.teacher_id`
-- [ ] create/edit فقط `class_subject`های خودش
-- [ ] store: `created_by = auth()->id()`
-- [ ] validateExam: `class_subject_id` باید متعلق به معلم باشد؛ مباحث از همان درس
-- [ ] approveScore: فقط attempt مربوط به آزمون خودش
-- [ ] حذف تلاش آزمون برای معلم **ممنوع** (route ندارد)
-- [ ] route prefix شرطی در `admin/exams/*` و مخفی کردن حذف تلاش
-- [ ] تست: CRUD آزمون خودش، 403 برای آزمون دیگران، ثبت نمره معلم
+- [x] `Teacher\ExamController`: index/create/store/edit/update/destroy/results/attemptDetail/approveScore
+- [x] فیلتر index به `class_subject.teacher_id`
+- [x] create/edit فقط `class_subject`های خودش
+- [x] store: `created_by = auth()->id()`
+- [x] validateExam: `class_subject_id` باید متعلق به معلم باشد؛ مباحث از همان درس
+- [x] approveScore: فقط attempt مربوط به آزمون خودش
+- [x] حذف تلاش آزمون برای معلم **ممنوع** (route ندارد)
+- [x] route prefix شرطی در `admin/exams/*` و مخفی کردن حذف تلاش
+- [x] تست: CRUD آزمون خودش، 403 برای آزمون دیگران، ثبت نمره معلم
 
 **commit:** `feat(teacher): add teacher exam management`
 
@@ -476,7 +476,7 @@ ALTER TABLE `exercises`
 | داشبورد و پروفایل معلم | ✅ | - | داشبورد اختصاصی + پروفایل تغییر رمز |
 | کلاس‌ها و دانش‌آموزان معلم | ✅ | - | scope کلاس/دانش‌آموز + فیلتر سرویس گزارش |
 | حضور/غیاب و امتیاز معلم | ✅ | - | فقط درس‌های خود معلم + حذف امتیاز محدود به سازنده |
-| آزمون‌های معلم | ⬜ | - | |
+| آزمون‌های معلم | ✅ | - | CRUD محدود به درس‌های خود معلم + created_by + تایید نمره |
 | تمرین‌های معلم | ⬜ | - | |
 | مباحث و بانک سوالات معلم | ⬜ | - | |
 | گزارش‌های معلم | ⬜ | - | |

@@ -169,6 +169,17 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         Route::delete('attendance/{classSubject}/day/{day}', [\App\Http\Controllers\Teacher\AttendanceController::class, 'destroyDay'])->name('attendance.destroy-day');
         Route::post('attendance/{classSubject}/points', [\App\Http\Controllers\Teacher\AttendanceController::class, 'addPoint'])->name('attendance.points.add');
         Route::delete('attendance/{classSubject}/points/{pointEntry}', [\App\Http\Controllers\Teacher\AttendanceController::class, 'deletePoint'])->name('attendance.points.delete');
+
+        // آزمون‌های معلم
+        Route::get('exams', [\App\Http\Controllers\Teacher\ExamController::class, 'index'])->name('exams.index');
+        Route::get('exams/create', [\App\Http\Controllers\Teacher\ExamController::class, 'create'])->name('exams.create');
+        Route::post('exams', [\App\Http\Controllers\Teacher\ExamController::class, 'store'])->name('exams.store');
+        Route::get('exams/{exam}/edit', [\App\Http\Controllers\Teacher\ExamController::class, 'edit'])->name('exams.edit');
+        Route::put('exams/{exam}', [\App\Http\Controllers\Teacher\ExamController::class, 'update'])->name('exams.update');
+        Route::delete('exams/{exam}', [\App\Http\Controllers\Teacher\ExamController::class, 'destroy'])->name('exams.destroy');
+        Route::get('exams/{exam}/results', [\App\Http\Controllers\Teacher\ExamController::class, 'results'])->name('exams.results');
+        Route::get('exams/{exam}/attempts/{attempt}', [\App\Http\Controllers\Teacher\ExamController::class, 'attemptDetail'])->name('exams.attempt-detail');
+        Route::post('exams/attempts/{attempt}/approve-score', [\App\Http\Controllers\Teacher\ExamController::class, 'approveScore'])->name('exams.approve-score');
     });
 
 // ==================== پنل دانش‌آموز ====================

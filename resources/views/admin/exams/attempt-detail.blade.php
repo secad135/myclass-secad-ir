@@ -1,4 +1,9 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
 @section('title', 'جزئیات تلاش — ' . $attempt->student->name)
 
@@ -69,7 +74,7 @@
                 <button type="submit" class="btn btn-danger">🗑️ حذف این تلاش</button>
             </form>
             @endif
-            <a href="{{ route('admin.exams.results', $exam) }}" class="btn btn-secondary">بازگشت به نتایج</a>
+            <a href="{{ route($panelPrefix . '.exams.results', $exam) }}" class="btn btn-secondary">بازگشت به نتایج</a>
         </div>
     </div>
 
@@ -108,7 +113,7 @@
                         <h3 class="mb-0 text-success">{{ $attempt->teacher_score }} / 20</h3>
                         <small class="text-success">✓ تایید شده</small>
                     @else
-                        <form action="{{ route('admin.exams.approve-score', $attempt) }}" method="POST" class="mt-2 d-flex gap-2">
+                        <form action="{{ route($panelPrefix . '.exams.approve-score', $attempt) }}" method="POST" class="mt-2 d-flex gap-2">
                             @csrf
                             <input type="number" name="teacher_score" class="form-control form-control-sm"
                                    value="{{ $attempt->score }}" step="0.25" min="0" max="20" required>

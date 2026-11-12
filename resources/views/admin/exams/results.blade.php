@@ -1,4 +1,9 @@
-@extends('layouts.admin')
+@php
+$isTeacher = auth()->user()->is_teacher;
+$panelPrefix = $isTeacher ? 'teacher' : 'admin';
+$layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
+@endphp
+@extends($layout)
 
 @section('title', 'نتایج آزمون: ' . $exam->title)
 
@@ -13,7 +18,7 @@
                 {{ $exam->classSubject?->schoolClass?->school?->name }}
             </small>
         </div>
-        <a href="{{ route('admin.exams.index') }}" class="btn btn-secondary">بازگشت</a>
+        <a href="{{ route($panelPrefix . '.exams.index') }}" class="btn btn-secondary">بازگشت</a>
     </div>
 
     {{-- کارت‌های خلاصه --}}
@@ -100,7 +105,7 @@
                                                 $badgeColor = $att->status === 'submitted' ? 'primary' : ($att->status === 'expired' ? 'warning text-dark' : 'secondary');
                                                 $statusText = $att->status === 'submitted' ? 'ثبت شده' : ($att->status === 'expired' ? 'پایان زمان' : 'ناتمام');
                                             @endphp
-                                            <a href="{{ route('admin.exams.attempt-detail', [$exam, $att]) }}"
+                                            <a href="{{ route($panelPrefix . '.exams.attempt-detail', [$exam, $att]) }}"
                                                class="badge bg-{{ $badgeColor }} text-decoration-none d-inline-flex align-items-center gap-1"
                                                title="تلاش #{{ $att->attempt_number }} — {{ $statusText }}">
                                                 #{{ $att->attempt_number }}: {{ $isFinished ? $att->final_score : 'ناتمام' }}
@@ -115,7 +120,7 @@
                             </td>
                             <td class="text-center">
                                 @if($row['best_attempt'])
-                                    <a href="{{ route('admin.exams.attempt-detail', [$exam, $row['best_attempt']]) }}"
+                                    <a href="{{ route($panelPrefix . '.exams.attempt-detail', [$exam, $row['best_attempt']]) }}"
                                        class="btn btn-sm btn-outline-info">بهترین پاسخ</a>
                                 @endif
                             </td>
