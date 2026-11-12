@@ -72,6 +72,7 @@ class DashboardController extends Controller
             // آخرین ۳۰ فعالیت دانش‌آموزان در ۷ روز اخیر
             $recentActivities = \App\Models\ActivityLog::with('user')
                 ->recent(7)
+                ->whereHas('user', fn ($q) => $q->where('is_student', true))
                 ->orderByDesc('created_at')
                 ->limit(30)
                 ->get();

@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\AttendanceDay;
 use App\Models\ClassSubject;
 use App\Models\PointEntry;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class AttendanceController extends BaseController
@@ -114,6 +115,12 @@ class AttendanceController extends BaseController
             }
         }
 
+        ActivityLogger::log(
+            auth()->user(),
+            'attendance_start',
+            'روز حضور و غیاب درس ' . ($classSubject->subject?->name ?? '—') . ' کلاس ' . ($classSubject->schoolClass?->name ?? '—') . ' را شروع کرد.'
+        );
+
         return redirect()->route('teacher.attendance.show', [
             'classSubject' => $classSubject->id,
             'date'         => $date,
@@ -155,6 +162,12 @@ class AttendanceController extends BaseController
             }
         }
 
+        ActivityLogger::log(
+            auth()->user(),
+            'attendance_save',
+            'حضور و غیاب درس ' . ($classSubject->subject?->name ?? '—') . ' کلاس ' . ($classSubject->schoolClass?->name ?? '—') . ' را ذخیره کرد.'
+        );
+
         return redirect()->route('teacher.attendance.show', [
             'classSubject' => $classSubject->id,
             'date'         => $request->date,
@@ -168,6 +181,12 @@ class AttendanceController extends BaseController
 
         $date = $day->date->format('Y-m-d');
         $day->delete();
+
+        ActivityLogger::log(
+            auth()->user(),
+            'attendance_delete',
+            'روز حضور و غیاب درس ' . ($classSubject->subject?->name ?? '—') . ' کلاس ' . ($classSubject->schoolClass?->name ?? '—') . ' را حذف کرد.'
+        );
 
         return redirect()->route('teacher.attendance.show', [
             'classSubject' => $classSubject->id,
@@ -191,7 +210,7 @@ class AttendanceController extends BaseController
             ->where('users.id', $request->student_id)->exists();
         abort_unless($isEnrolled, 422, 'دانش‌آموز در این کلاس نیست.');
 
-        PointEntry::create([
+        $entry = PointEntry::create([
             'student_id'        => $request->student_id,
             'class_subject_id'  => $classSubject->id,
             'point_category_id' => $request->point_category_id,
@@ -200,6 +219,13 @@ class AttendanceController extends BaseController
             'entry_date'        => $request->date,
             'created_by'        => auth()->id(),
         ]);
+
+        $entry->loadMissing('student');
+        ActivityLogger::log(
+            auth()->user(),
+            'point_add',
+            'برای ' . ($entry->student?->name ?? 'دانش‌آموز') . ' در درس ' . ($classSubject->subject?->name ?? '—') . ' امتیاز ' . $request->points . ' ثبت کرد.'
+        );
 
         return back()->with('success', 'امتیاز ثبت شد.');
     }
@@ -211,7 +237,14 @@ class AttendanceController extends BaseController
 
         abort_unless((int) $pointEntry->created_by === (int) auth()->id(), 403);
 
+        $pointEntry->loadMissing('student');
         $pointEntry->delete();
+
+        ActivityLogger::log(
+            auth()->user(),
+            'point_delete',
+            'امتیاز ' . ($pointEntry->student?->name ?? 'دانش‌آموز') . ' در درس ' . ($classSubject->subject?->name ?? '—') . ' را حذف کرد.'
+        );
 
         return back()->with('success', 'امتیاز حذف شد.');
     }

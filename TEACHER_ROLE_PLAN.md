@@ -2,7 +2,7 @@
 
 > این فایل مرجع اصلی کار است. اگر جلسه قطع شد یا توکن تمام شد، از همین فایل ادامه بده.
 > شاخه کاری: `feature/teacher-role` (از `main`)
-> وضعیت کلی: **در حال پیاده‌سازی — فاز ۰ تکمیل شد؛ آماده شروع فاز ۱.**
+> وضعیت کلی: **فاز ۰، ۱ و ۲ تکمیل شد؛ آماده شروع فاز ۳ (سخت‌سازی، SQL هاست، merge).**
 
 ---
 
@@ -312,38 +312,38 @@ ALTER TABLE `exercises`
 **commit:** `feat(teacher): add teacher exam management`
 
 ### ۲.۷ تمرین‌ها
-- [ ] `Teacher\ExerciseController`: index/create/store/edit/update/destroy/submissions/grade
-- [ ] فیلتر به `class_subject`های خودش
-- [ ] store: `created_by = auth()->id()`
-- [ ] grade: فقط تمرین خودش؛ `graded_by = auth()->id()`
-- [ ] route prefix شرطی در `admin/exercises/*`
-- [ ] تست: CRUD تمرین، تصحیح پاسخ، 403
+- [x] `Teacher\ExerciseController`: index/create/store/edit/update/destroy/submissions/grade
+- [x] فیلتر به `class_subject`های خودش
+- [x] store: `created_by = auth()->id()`
+- [x] grade: فقط تمرین خودش؛ `graded_by = auth()->id()`
+- [x] route prefix شرطی در `admin/exercises/*`
+- [x] بررسی دستی: CRUD تمرین، تصحیح پاسخ، 403
 
 **commit:** `feat(teacher): add teacher exercise management`
 
 ### ۳.۷ مباحث و بانک سوالات
-- [ ] `Teacher\TopicController`: index/create/store/edit/update/destroy
-- [ ] `$subjectIds = ownSubjectIds()`؛ همه کوئری‌ها و اعتبارسنجی‌ها محدود به آن
-- [ ] `Teacher\QuestionController`: index/create/store/edit/update/destroy/importForm/import/downloadTemplate
-- [ ] topic_id در store/update/import باید در مباحث درس‌های معلم باشد
-- [ ] route prefix شرطی در `admin/topics/*` و `admin/questions/*`
-- [ ] توجه: محتوای مبحث/سوال در سطح «درس» مشترک است؛ معلم هم‌درس می‌تواند سوالات را ببیند/ویرایش کند. (اگر بعداً جداسازی سازنده لازم شد، `created_by` اضافه شود.)
-- [ ] تست: معلم درس دیگر → 403
+- [x] `Teacher\TopicController`: index/create/store/edit/update/destroy
+- [x] `$subjectIds = ownSubjectIds()`؛ همه کوئری‌ها و اعتبارسنجی‌ها محدود به آن
+- [x] `Teacher\QuestionController`: index/create/store/edit/update/destroy/importForm/import/downloadTemplate
+- [x] topic_id در store/update/import باید در مباحث درس‌های معلم باشد
+- [x] route prefix شرطی در `admin/topics/*` و `admin/questions/*`
+- [x] توجه: محتوای مبحث/سوال در سطح «درس» مشترک است؛ معلم هم‌درس می‌تواند سوالات را ببیند/ویرایش کند. (اگر بعداً جداسازی سازنده لازم شد، `created_by` اضافه شود.)
+- [x] بررسی دستی: معلم درس دیگر → 403
 
 **commit:** `feat(teacher): add scoped topics and question bank`
 
 ### ۴.۷ گزارش‌ها
-- [ ] `Teacher\SchoolClassController@report` و `reportFull` برای کلاس‌های خودش
-- [ ] استفاده از `admin/classes/report` و `admin/classes/full-report` با route/layout شرطی
-- [ ] تست: گزارش کلاس خودش 200، کلاس دیگر 403
+- [x] `Teacher\SchoolClassController@report` و `reportFull` برای کلاس‌های خودش
+- [x] استفاده از `admin/classes/report` و `admin/classes/full-report` با route/layout شرطی
+- [x] بررسی دستی: گزارش کلاس خودش 200، کلاس دیگر 403
 
 **commit:** `feat(teacher): add teacher class reports`
 
 ### ۵.۷ لاگ فعالیت
-- [ ] `ActivityLogger`: پذیرش معلم علاوه بر دانش‌آموز
-- [ ] `Admin\DashboardController`: فیلتر فعالیت‌های اخیر به دانش‌آموزان (`whereHas user is_student`)
-- [ ] لاگ: حضور/غیاب، امتیاز، ساخت/ویرایش/حذف آزمون، تمرین، تصحیح، سوال/مبحث
-- [ ] تست: لاگ معلم در جدول ثبت شود ولی در ویجت دانش‌آموزان ظاهر نشود
+- [x] `ActivityLogger`: پذیرش معلم علاوه بر دانش‌آموز
+- [x] `Admin\DashboardController`: فیلتر فعالیت‌های اخیر به دانش‌آموزان (`whereHas user is_student`)
+- [x] لاگ: حضور/غیاب، امتیاز، ساخت/ویرایش/حذف آزمون، تمرین، تصحیح، سوال/مبحث
+- [x] بررسی دستی: لاگ معلم در جدول ثبت شود ولی در ویجت دانش‌آموزان ظاهر نشود
 
 **commit:** `feat(teacher): log teacher activities`
 
@@ -480,7 +480,7 @@ ALTER TABLE `exercises`
 | تمرین‌های معلم | ✅ | - | CRUD محدود به درس‌های خود معلم + created_by + تصحیح پاسخ |
 | مباحث و بانک سوالات معلم | ✅ | - | CRUD محدود به دروس/مباحث خود معلم + import گروهی |
 | گزارش‌های معلم | ✅ | - | گزارش کلاس/کامل فقط برای کلاس‌های معلم + سرویس مشترک ClassReportService |
-| لاگ فعالیت معلم | ⬜ | - | |
+| لاگ فعالیت معلم | ✅ | - | ثبت لاگ معلم + فیلتر ویجت ادمین به دانش‌آموزان |
 | تست نهایی و امنیت | ⬜ | - | |
 | SQL هاست + استقرار | ⬜ | - | |
 | merge به main | ⬜ | - | فقط بعد از تأیید |

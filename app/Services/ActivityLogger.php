@@ -10,7 +10,7 @@ class ActivityLogger
 {
     public static function log(?User $user, string $action, string $description): void
     {
-        if (!$user || !$user->is_student || !Schema::hasTable('activity_logs')) {
+        if (!$user || !($user->is_student || $user->is_teacher) || !Schema::hasTable('activity_logs')) {
             return;
         }
 

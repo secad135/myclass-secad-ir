@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Models\Question;
 use App\Models\Topic;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -64,6 +65,8 @@ class QuestionController extends BaseController
             }
         });
 
+        ActivityLogger::log(auth()->user(), 'question_create', 'یک سوال جدید اضافه کرد.');
+
         return redirect()->route('teacher.questions.index', ['topic_id' => $data['topic_id']])
             ->with('success', 'سوال اضافه شد.');
     }
@@ -104,6 +107,8 @@ class QuestionController extends BaseController
             }
         });
 
+        ActivityLogger::log(auth()->user(), 'question_update', 'سوال #' . $question->id . ' را ویرایش کرد.');
+
         return redirect()->route('teacher.questions.index')
             ->with('success', 'سوال ویرایش شد.');
     }
@@ -112,7 +117,10 @@ class QuestionController extends BaseController
     {
         $this->assertOwnsTopicId((int) $question->topic_id);
 
+        $id = $question->id;
         $question->delete();
+
+        ActivityLogger::log(auth()->user(), 'question_delete', 'سوال #' . $id . ' را حذف کرد.');
 
         return redirect()->route('teacher.questions.index')
             ->with('success', 'سوال حذف شد.');
@@ -198,6 +206,8 @@ class QuestionController extends BaseController
                 $created++;
             }
         });
+
+        ActivityLogger::log(auth()->user(), 'question_import', $created . ' سوال را به‌صورت گروهی وارد کرد.');
 
         return redirect()->route('teacher.questions.index', ['topic_id' => $request->topic_id])
             ->with('success', "{$created} سوال با موفقیت وارد شد.");

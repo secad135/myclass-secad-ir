@@ -8,6 +8,7 @@ use App\Models\ExamAttempt;
 use App\Models\Question;
 use App\Models\Topic;
 use App\Services\ExamService;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -57,6 +58,8 @@ class ExamController extends BaseController
             $exam->topics()->sync($data['topics']);
         });
 
+        ActivityLogger::log(auth()->user(), 'exam_create', 'آزمون «' . $data['title'] . '» را ساخت.');
+
         return redirect()->route('teacher.exams.index')
             ->with('success', 'آزمون ساخته شد.');
     }
@@ -97,6 +100,8 @@ class ExamController extends BaseController
             $exam->topics()->sync($data['topics']);
         });
 
+        ActivityLogger::log(auth()->user(), 'exam_update', 'آزمون «' . $data['title'] . '» را ویرایش کرد.');
+
         return redirect()->route('teacher.exams.index')
             ->with('success', 'آزمون ویرایش شد.');
     }
@@ -105,7 +110,10 @@ class ExamController extends BaseController
     {
         $this->assertOwnsExam($exam);
 
+        $title = $exam->title;
         $exam->delete();
+
+        ActivityLogger::log(auth()->user(), 'exam_delete', 'آزمون «' . $title . '» را حذف کرد.');
 
         return redirect()->route('teacher.exams.index')
             ->with('success', 'آزمون حذف شد.');
@@ -153,6 +161,13 @@ class ExamController extends BaseController
             'teacher_score' => $request->teacher_score,
             'is_approved'   => true,
         ]);
+
+        $attempt->loadMissing('student');
+        ActivityLogger::log(
+            auth()->user(),
+            'exam_approve',
+            'نمره ' . ($attempt->student?->name ?? 'دانش‌آموز') . ' در آزمون «' . ($attempt->exam?->title ?? '—') . '» را تأیید کرد.'
+        );
 
         return back()->with('success', 'نمره تایید و ثبت شد.');
     }

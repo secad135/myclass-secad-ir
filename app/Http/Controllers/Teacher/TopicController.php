@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Teacher;
 
 use App\Models\Subject;
 use App\Models\Topic;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 
 class TopicController extends BaseController
@@ -48,6 +49,8 @@ class TopicController extends BaseController
 
         Topic::create($data);
 
+        ActivityLogger::log(auth()->user(), 'topic_create', 'مبحث «' . $data['name'] . '» را ساخت.');
+
         return redirect()->route('teacher.topics.index', ['subject_id' => $data['subject_id']])
             ->with('success', 'مبحث اضافه شد.');
     }
@@ -70,6 +73,8 @@ class TopicController extends BaseController
 
         $topic->update($data);
 
+        ActivityLogger::log(auth()->user(), 'topic_update', 'مبحث «' . $data['name'] . '» را ویرایش کرد.');
+
         return redirect()->route('teacher.topics.index')
             ->with('success', 'مبحث ویرایش شد.');
     }
@@ -78,7 +83,10 @@ class TopicController extends BaseController
     {
         $this->assertOwnsTopic($topic);
 
+        $name = $topic->name;
         $topic->delete();
+
+        ActivityLogger::log(auth()->user(), 'topic_delete', 'مبحث «' . $name . '» را حذف کرد.');
 
         return redirect()->route('teacher.topics.index')
             ->with('success', 'مبحث حذف شد.');

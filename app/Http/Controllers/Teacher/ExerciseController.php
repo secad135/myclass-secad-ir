@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Teacher;
 use App\Models\ClassSubject;
 use App\Models\Exercise;
 use App\Models\ExerciseSubmission;
+use App\Services\ActivityLogger;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -53,6 +54,8 @@ class ExerciseController extends BaseController
             'allow_file_upload'     => $request->boolean('allow_file_upload'),
         ]);
 
+        ActivityLogger::log(auth()->user(), 'exercise_create', 'تمرین «' . $data['title'] . '» را ساخت.');
+
         return redirect()->route('teacher.exercises.index')
             ->with('success', 'تمرین ساخته شد.');
     }
@@ -93,6 +96,8 @@ class ExerciseController extends BaseController
             'allow_file_upload'     => $request->boolean('allow_file_upload'),
         ]);
 
+        ActivityLogger::log(auth()->user(), 'exercise_update', 'تمرین «' . $data['title'] . '» را ویرایش کرد.');
+
         return redirect()->route('teacher.exercises.index')
             ->with('success', 'تمرین ویرایش شد.');
     }
@@ -104,7 +109,10 @@ class ExerciseController extends BaseController
         if ($exercise->attachment_path) {
             Storage::disk('public')->delete($exercise->attachment_path);
         }
+        $title = $exercise->title;
         $exercise->delete();
+
+        ActivityLogger::log(auth()->user(), 'exercise_delete', 'تمرین «' . $title . '» را حذف کرد.');
 
         return redirect()->route('teacher.exercises.index')
             ->with('success', 'تمرین حذف شد.');
@@ -141,6 +149,13 @@ class ExerciseController extends BaseController
             'graded_at' => now(),
             'graded_by' => auth()->id(),
         ]);
+
+        $submission->loadMissing('student');
+        ActivityLogger::log(
+            auth()->user(),
+            'exercise_grade',
+            'پاسخ ' . ($submission->student?->name ?? 'دانش‌آموز') . ' در تمرین «' . $exercise->title . '» را تصحیح کرد.'
+        );
 
         return redirect()->route('teacher.exercises.submissions', $exercise)
             ->with('success', 'نمره ثبت شد.');
