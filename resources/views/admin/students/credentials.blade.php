@@ -119,8 +119,7 @@
                     $message = $service->buildShadMessage(
                         $student->name,
                         $student->email,
-                        $student->initial_password ?? '(قبلاً تغییر داده)',
-                        url('/login')
+                        $student->initial_password ?? '(قبلاً تغییر داده)'
                     );
                 @endphp
                 <tr>
@@ -173,11 +172,25 @@
         document.querySelectorAll('.copy-shad-btn').forEach(function (btn) {
             btn.addEventListener('click', function () {
                 const text = this.dataset.message;
-                navigator.clipboard.writeText(text).then(function () {
-                    new bootstrap.Toast(document.getElementById('copyToast')).show();
-                }).catch(function () {
-                    alert('کپی ناموفق بود.');
-                });
+                
+                // روش مطمئن برای کپی در همه مرورگرها
+                const textarea = document.createElement('textarea');
+                textarea.value = text;
+                textarea.style.position = 'fixed'; // جلوگیری از اسکرول صفحه
+                document.body.appendChild(textarea);
+                textarea.select();
+                textarea.setSelectionRange(0, 99999); // برای موبایل
+                
+                try {
+                    document.execCommand('copy');
+                    // نمایش پیام موفقیت
+                    const toast = new bootstrap.Toast(document.getElementById('copyToast'));
+                    toast.show();
+                } catch (err) {
+                    alert('کپی ناموفق بود. لطفاً متن را دستی انتخاب کنید.');
+                }
+                
+                document.body.removeChild(textarea);
             });
         });
     </script>
