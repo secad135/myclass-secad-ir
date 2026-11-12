@@ -4,6 +4,21 @@
 
 @section('head')
 <style>
+    /* textarea مخفی اما قابل دسترسی برای کپی */
+    .copy-source {
+        position: fixed !important;
+        top: 0 !important;
+        left: -9999px !important;
+        opacity: 0;
+        pointer-events: none;
+        width: 1px;
+        height: 1px;
+        border: 0;
+        padding: 0;
+        margin: 0;
+        resize: none;
+    }
+
     @media (max-width: 991.98px) {
         .d-flex.justify-content-between.mb-3 {
             flex-direction: column;
@@ -109,6 +124,13 @@
     <a href="{{ route('admin.students.index') }}" class="btn btn-secondary">بازگشت</a>
 </div>
 
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+@endif
+
 <div class="alert alert-info small">
     <strong>راهنما:</strong>
     روی دکمه «📋 کپی برای شاد» هر ردیف بزنید، متن آماده می‌شود، در شاد برای دانش‌آموز پیام خصوصی بفرستید.
@@ -129,102 +151,137 @@
     </thead>
     <tbody>
         @forelse($students as $student)
-        @php
-        $service = new \App\Services\StudentCredentialService();
-        $message = $service->buildShadMessage(
-        $student->name,
-        $student->email,
-        $student->initial_password ?? '(قبلاً تغییر داده)'
-        );
-        @endphp
-        <tr>
-            <td>{{ $student->id }}</td>
-            <td>{{ $student->name }}</td>
-            <td dir="ltr"><code>{{ $student->email }}</code></td>
-            <td>
-                @if($student->initial_password)
-                <code class="text-success">{{ $student->initial_password }}</code>
-                @else
-                <span class="text-muted small">— (تغییر داده)</span>
-                @endif
-            </td>
-            <td>
-                @if($student->must_change_password)
-                <span class="badge bg-warning text-dark">در انتظار تغییر رمز</span>
-                @else
-                <span class="badge bg-success">فعال</span>
-                @endif
-            </td>
-            <td>
-                @if($student->initial_password)
-                {{-- textarea مخفی برای نگهداری متن بدون مشکل --}}
-                <textarea id="msg-{{ $student->id }}" class="d-none">{{ $message }}</textarea>
+            @php
+                $service = new \App\Services\StudentCredentialService();
+                $message = $service->buildShadMessage(
+                    $student->name,
+                    $student->email,
+                    $student->initial_password ?? '(قبلاً تغییر داده)'
+                );
+            @endphp
+            <tr>
+                <td data-label="#">{{ $student->id }}</td>
+                <td data-label="نام">{{ $student->name }}</td>
+                <td data-label="ایمیل" dir="ltr"><code>{{ $student->email }}</code></td>
+                <td data-label="رمز اولیه">
+                    @if($student->initial_password)
+                        <code class="text-success">{{ $student->initial_password }}</code>
+                    @else
+                        <span class="text-muted small">— (تغییر داده)</span>
+                    @endif
+                </td>
+                <td data-label="وضعیت">
+                    @if($student->must_change_password)
+                        <span class="badge bg-warning text-dark">در انتظار تغییر رمز</span>
+                    @else
+                        <span class="badge bg-success">فعال</span>
+                    @endif
+                </td>
+                <td data-label="عملیات">
+                    @if($student->initial_password)
+                        {{-- textarea مخفی برای نگهداری متن (نه با d-none، بلکه خارج از کادر دید) --}}
+                        <textarea class="copy-source" id="msg-{{ $student->id }}">{{ $message }}</textarea>
 
-                <button type="button" class="btn btn-sm btn-primary copy-btn" data-target="msg-{{ $student->id }}">
-                    📋 کپی برای شاد
-                </button>
-                @endif
-                <form action="{{ route('admin.students.reset-password', $student) }}" method="POST" class="d-inline" onsubmit="return confirm('رمز جدید تولید شود؟ رمز فعلی باطل می‌شود.')">
-                    @csrf
-                    <button class="btn btn-sm btn-warning">🔄 بازنشانی رمز</button>
-                </form>
-            </td>
-        </tr>
+                        <button type="button" class="btn btn-sm btn-primary copy-btn" data-target="msg-{{ $student->id }}">
+                            📋 کپی برای شاد
+                        </button>
+                    @endif
+                    <form action="{{ route('admin.students.reset-password', $student) }}" method="POST" class="d-inline" onsubmit="return confirm('رمز جدید تولید شود؟ رمز فعلی باطل می‌شود.')">
+                        @csrf
+                        <button class="btn btn-sm btn-warning">🔄 بازنشانی رمز</button>
+                    </form>
+                </td>
+            </tr>
         @empty
-        <tr>
-            <td colspan="6" class="text-center text-muted">هیچ دانش‌آموزی وجود ندارد.</td>
-        </tr>
+            <tr>
+                <td colspan="6" class="text-center text-muted">هیچ دانش‌آموزی وجود ندارد.</td>
+            </tr>
         @endforelse
     </tbody>
 </table>
-
-<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 9999;">
-    <div id="copyToast" class="toast align-items-center text-bg-success border-0">
-        <div class="d-flex">
-            <div class="toast-body">متن در کلیپ‌بورد کپی شد ✅</div>
-            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
-        </div>
-    </div>
-</div>
 
 @endsection
 
 @section('scripts')
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        document.querySelectorAll('.copy-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
+(function () {
+    'use strict';
+
+    // نمایش بازخورد بصری روی دکمه
+    function showFeedback(btn, success) {
+        const originalHTML = btn.innerHTML;
+        const originalClass = btn.className;
+
+        if (success) {
+            btn.innerHTML = '✅ کپی شد!';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-success');
+        } else {
+            btn.innerHTML = '❌ کپی نشد';
+            btn.classList.remove('btn-primary');
+            btn.classList.add('btn-danger');
+        }
+
+        setTimeout(function () {
+            btn.innerHTML = originalHTML;
+            btn.className = originalClass;
+        }, 2000);
+    }
+
+    // تابع کپی با دو روش (اول مدرن، بعد قدیمی)
+    async function copyText(text) {
+        // روش مدرن Clipboard API (فقط HTTPS یا localhost)
+        if (navigator.clipboard && window.isSecureContext) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (err) {
+                console.warn('navigator.clipboard failed, falling back:', err);
+            }
+        }
+
+        // روش قدیمی به عنوان پشتیبان
+        try {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            temp.style.position = 'fixed';
+            temp.style.top = '0';
+            temp.style.left = '-9999px';
+            temp.style.opacity = '0';
+            document.body.appendChild(temp);
+            temp.focus();
+            temp.select();
+            temp.setSelectionRange(0, text.length);
+            const ok = document.execCommand('copy');
+            document.body.removeChild(temp);
+            return ok;
+        } catch (err) {
+            console.error('execCommand failed:', err);
+            return false;
+        }
+    }
+
+    // اتصال به همه دکمه‌ها
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.copy-btn').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
                 const targetId = this.getAttribute('data-target');
                 const textarea = document.getElementById(targetId);
 
-                // نمایش موقت textarea برای انتخاب متن
-                textarea.classList.remove('d-none');
-                textarea.select();
-                textarea.setSelectionRange(0, 99999);
-
-                try {
-                    const successful = document.execCommand('copy');
-                    if (successful) {
-                        // تغییر موقت متن دکمه برای بازخورد به کاربر
-                        const originalText = this.innerHTML;
-                        this.innerHTML = '✅ کپی شد!';
-                        this.classList.replace('btn-primary', 'btn-success');
-
-                        setTimeout(() => {
-                            this.innerHTML = originalText;
-                            this.classList.replace('btn-success', 'btn-primary');
-                        }, 2000);
-                    } else {
-                        alert('مرورگر شما از کپی خودکار پشتیبانی نمی‌کند. لطفاً متن را دستی انتخاب کنید.');
-                    }
-                } catch (err) {
-                    alert('خطا در کپی کردن متن.');
+                if (!textarea) {
+                    alert('متن قابل کپی یافت نشد.');
+                    return;
                 }
 
-                // مخفی کردن مجدد textarea
-                textarea.classList.add('d-none');
+                const ok = await copyText(textarea.value);
+                showFeedback(this, ok);
+
+                if (!ok) {
+                    alert('کپی ناموفق بود. لطفاً متن را دستی انتخاب و کپی کنید.');
+                }
             });
         });
     });
+})();
 </script>
 @endsection
