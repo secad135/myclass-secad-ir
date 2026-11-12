@@ -280,8 +280,7 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                     <th class="text-center">درصد حضور</th>
                     <th class="text-center">غایب</th>
                     <th class="text-center">تاخیر</th>
-                    <th class="text-center">اجازه</th>
-                    <th class="text-center">کل جلسات</th>
+
                     <th class="text-center"></th>
                 </tr>
             </thead>
@@ -341,8 +340,7 @@ $layout = $isManager ? 'layouts.manager' : 'layouts.admin';
                         <span class="text-muted">{{ $row['stats']['late'] }}</span>
                         @endif
                     </td>
-                    <td class="text-center text-muted">{{ $row['stats']['excused'] }}</td>
-                    <td class="text-center text-muted">{{ $row['stats']['total_held'] }}</td>
+                   
                     <td class="text-center">
                         <a href="{{ auth()->user()->is_school_manager 
         ? route('manager.students.show', ['student' => $row['student'], 'class_id' => $class->id]) 
