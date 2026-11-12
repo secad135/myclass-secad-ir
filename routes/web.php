@@ -98,6 +98,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // --- آزمون‌ها ---
     Route::get('exams/{exam}/results', [\App\Http\Controllers\Admin\ExamController::class, 'results'])->name('exams.results');
     Route::get('exams/{exam}/attempts/{attempt}', [\App\Http\Controllers\Admin\ExamController::class, 'attemptDetail'])->name('exams.attempt-detail');
+    Route::delete('exams/{exam}/attempts/{attempt}', [\App\Http\Controllers\Admin\ExamController::class, 'destroyAttempt'])->name('exams.attempts.destroy');
     Route::post('exams/attempts/{attempt}/approve', [\App\Http\Controllers\Admin\ExamController::class, 'approveScore'])->name('exams.approve-score');
 
     Route::resource('exams', \App\Http\Controllers\Admin\ExamController::class);

@@ -60,7 +60,17 @@
                 {{ jdate($attempt->finished_at ?? $attempt->started_at, 'yyyy/MM/dd HH:mm') }}
             </small>
         </div>
-        <a href="{{ route('admin.exams.results', $exam) }}" class="btn btn-secondary">بازگشت به نتایج</a>
+        <div class="d-flex gap-2 align-items-center">
+            @if(auth()->user()?->is_admin)
+            <form action="{{ route('admin.exams.attempts.destroy', [$exam, $attempt]) }}" method="POST"
+                  onsubmit="return confirm('تلاش #{{ $attempt->attempt_number }} دانش‌آموز «{{ $attempt->student->name }}» حذف شود؟ این کار قابل بازگشت نیست.');">
+                @csrf
+                @method('DELETE')
+                <button type="submit" class="btn btn-danger">🗑️ حذف این تلاش</button>
+            </form>
+            @endif
+            <a href="{{ route('admin.exams.results', $exam) }}" class="btn btn-secondary">بازگشت به نتایج</a>
+        </div>
     </div>
 
     <div class="row g-3 mb-4">

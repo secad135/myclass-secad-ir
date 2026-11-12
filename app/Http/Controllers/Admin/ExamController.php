@@ -155,6 +155,24 @@ class ExamController extends Controller
         return back()->with('success', 'نمره تایید و ثبت شد.');
     }
 
+    /**
+     * حذف یک تلاش آزمون (فقط ادمین)
+     * پاسخ‌های ثبت‌شده برای این تلاش هم حذف می‌شوند.
+     */
+    public function destroyAttempt(Exam $exam, \App\Models\ExamAttempt $attempt)
+    {
+        abort_unless(auth()->user()?->is_admin, 403);
+        abort_unless($attempt->exam_id === $exam->id, 404);
+
+        DB::transaction(function () use ($attempt) {
+            $attempt->answers()->delete();
+            $attempt->delete();
+        });
+
+        return redirect()->route('admin.exams.results', $exam)
+            ->with('success', 'تلاش #' . $attempt->attempt_number . ' حذف شد.');
+    }
+
     private function validateExam(Request $request, ?int $ignoreId = null): array
     {
         $data = $request->validate([
