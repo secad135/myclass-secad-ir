@@ -118,6 +118,11 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 Route::middleware(['auth', 'manager'])->prefix('manager')->name('manager.')->group(function () {
     Route::get('/', [\App\Http\Controllers\Manager\DashboardController::class, 'index'])->name('dashboard');
 
+    // پروفایل مسئول مدرسه
+    Route::get('profile', [\App\Http\Controllers\Manager\ProfileController::class, 'edit'])->name('profile');
+    Route::patch('profile', [\App\Http\Controllers\Manager\ProfileController::class, 'update'])->name('profile.update');
+    Route::put('profile/password', [\App\Http\Controllers\Manager\ProfileController::class, 'updatePassword'])->name('profile.password');
+
     // گزارش کلاس‌ها
     Route::get('classes/{class}/report', [\App\Http\Controllers\Manager\ReportController::class, 'classReport'])->name('classes.report');
 
