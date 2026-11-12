@@ -41,7 +41,7 @@ class StudentCredentialService
     /**
      * آماده کردن متن پیام برای شاد
      */
-        /**
+    /**
      * آماده کردن متن پیام برای شاد
      */
     public function buildShadMessage(string $name, string $email, string $password): string
@@ -49,11 +49,10 @@ class StudentCredentialService
         $loginUrl = 'https://myclass.secad.ir/login';
 
         return "دانش‌آموز گرامی، {$name}\n\n"
-             . "اطلاعات ورود شما به سامانه آموزشی myClass به شرح زیر است:\n\n"
-             . "این سامانه برای شرکت در آزمون ها و ارسال تمرین های هفتگی است\n"
-             . "🔗 آدرس سامانه:\n{$loginUrl}\n\n"
-             . "📧 نام کاربری (ایمیل):\n{$email}\n\n"
-             . "🔑 رمز عبور اولیه:\n{$password}\n\n"
-             . "خواهشمند است پس از اولین ورود، نسبت به تغییر رمز عبور خود اقدام فرمایید.";
+            . "اطلاعات ورود شما به سامانه آموزشی MyClass به شرح زیر است:\n\n"
+            . "آدرس سامانه:\n{$loginUrl}\n\n"
+            . "نام کاربری (ایمیل):\n{$email}\n\n"
+            . "رمز عبور اولیه:\n{$password}\n\n"
+            . "خواهشمند است پس از اولین ورود، نسبت به تغییر رمز عبور خود اقدام فرمایید.";
     }
 }
