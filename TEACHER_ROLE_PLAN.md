@@ -252,9 +252,9 @@ ALTER TABLE `exercises`
 **commit:** `feat(teacher): assign teachers to class subjects`
 
 ### ۵.۶ اسکلت پنل معلم
-- [ ] `layouts/teacher.blade.php` با منوی: داشبورد، کلاس‌های من، دانش‌آموزان، آزمون‌ها، تمرین‌ها، مباحث، بانک سوالات، پروفایل
-- [ ] route group `/teacher` با `auth`, `teacher`, `password.changed`
-- [ ] `Teacher\BaseController` با helperهای:
+- [x] `layouts/teacher.blade.php` با منوی: داشبورد، کلاس‌های من، دانش‌آموزان، آزمون‌ها، تمرین‌ها، مباحث، بانک سوالات، پروفایل
+- [x] route group `/teacher` با `auth`, `teacher`, `password.changed`
+- [x] `Teacher\BaseController` با helperهای:
   - `ownClassSubjectIds()`
   - `ownClassIds()`
   - `ownSubjectIds()`
@@ -262,9 +262,9 @@ ALTER TABLE `exercises`
   - `assertOwnsExam()`
   - `assertOwnsExercise()`
   - `assertOwnsStudent()`
-- [ ] `Teacher\DashboardController` + `teacher/dashboard.blade.php`
-- [ ] `Teacher\ProfileController` + view (نام/ایمیل/رمز)
-- [ ] تست رندر داشبورد و پروفایل + تغییر رمز
+- [x] `Teacher\DashboardController` + `teacher/dashboard.blade.php`
+- [x] `Teacher\ProfileController` + view (نام/ایمیل/رمز)
+- [x] تست رندر داشبورد و پروفایل + تغییر رمز
 
 **commit:** `feat(teacher): add teacher panel shell and profile`
 
@@ -468,12 +468,12 @@ ALTER TABLE `exercises`
 | نوشتن طرح و پرسش‌نامه | ✅ | - | همین فایل |
 | ساخت شاخه `feature/teacher-role` | ✅ | - | `feature/teacher-role` از `main` ساخته و push شد |
 | کپی طرح به `TEACHER_ROLE_PLAN.md` | ✅ | - | نسخه پروژه ساخته شد |
-| migrationها و مدل‌ها | ⬜ | - | |
+| migrationها و مدل‌ها | ✅ | `70b119b` | `class_subjects.teacher_id` + `exams/exercises.created_by` |
 | middleware و ورود معلم | ✅ | - | |
 | CRUD معلم در ادمین | ✅ | - | |
 | تخصیص معلم به درس | ✅ | - | |
-| layout و اسکلت پنل معلم | ⬜ | - | |
-| داشبورد و پروفایل معلم | ⬜ | - | |
+| layout و اسکلت پنل معلم | ✅ | - | layout معلم + route group + auth/teacher/password.changed |
+| داشبورد و پروفایل معلم | ✅ | - | داشبورد اختصاصی + پروفایل تغییر رمز |
 | کلاس‌ها و دانش‌آموزان معلم | ⬜ | - | |
 | حضور/غیاب و امتیاز معلم | ⬜ | - | |
 | آزمون‌های معلم | ⬜ | - | |

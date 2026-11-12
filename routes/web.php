@@ -142,6 +142,19 @@ Route::middleware(['auth', 'manager'])->prefix('manager')->name('manager.')->gro
     Route::get('students/{student}', [\App\Http\Controllers\Manager\ReportController::class, 'studentProfile'])->name('students.show');
 });
 
+// ==================== پنل معلم ====================
+Route::middleware(['auth', 'teacher', 'password.changed'])
+    ->prefix('teacher')
+    ->name('teacher.')
+    ->group(function () {
+        Route::get('/', [\App\Http\Controllers\Teacher\DashboardController::class, 'index'])->name('dashboard');
+
+        // پروفایل معلم
+        Route::get('profile', [\App\Http\Controllers\Teacher\ProfileController::class, 'edit'])->name('profile');
+        Route::patch('profile', [\App\Http\Controllers\Teacher\ProfileController::class, 'update'])->name('profile.update');
+        Route::put('profile/password', [\App\Http\Controllers\Teacher\ProfileController::class, 'updatePassword'])->name('profile.password');
+    });
+
 // ==================== پنل دانش‌آموز ====================
 Route::middleware(['auth', 'student', 'password.changed'])
     ->prefix('panel')
