@@ -80,6 +80,98 @@ h6,
 }
 
 /* ============================================================
+   غیرفعال‌سازی انتخاب متن برای عناصر غیرضروری رابط کاربری
+   متن اصلی محتوا، سلول‌های جدول، فرم‌ها و بلوک‌های کد
+   همچنان قابل انتخاب و کپی باقی می‌مانند.
+   ============================================================ */
+.navbar,
+.navbar *,
+.navbar-custom,
+.navbar-custom *,
+.admin-sidebar,
+.admin-sidebar *,
+.admin-topbar,
+.admin-topbar *,
+.panel-navbar,
+.panel-navbar *,
+.navbar-manager,
+.navbar-manager *,
+.nav,
+.nav *,
+.breadcrumb,
+.breadcrumb *,
+.pagination,
+.pagination *,
+.dropdown-menu,
+.dropdown-menu *,
+.btn,
+.btn *,
+button,
+button *,
+.card-header,
+.card-header *,
+.card-footer,
+.card-footer *,
+.modal-header,
+.modal-header *,
+.modal-footer,
+.modal-footer *,
+.alert,
+.alert *,
+.badge,
+.badge *,
+label,
+.form-label,
+.form-check-label,
+.input-group-text,
+th,
+.page-title,
+.section-title,
+.topbar-title,
+.card-title,
+.modal-title,
+.panel-title,
+.page-link,
+.btn-close,
+.timer-fixed,
+.exam-watermark,
+.report-header,
+.error-title,
+footer,
+.footer,
+.text-muted,
+.small {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+/* استثناها: ورودی‌ها، محتوای قابل ویرایش و کدها قابل انتخاب بمانند */
+input,
+textarea,
+select,
+option,
+[contenteditable="true"],
+[contenteditable="true"] *,
+pre,
+pre *,
+code,
+code *,
+kbd,
+samp,
+.selectable,
+.selectable *,
+.copyable,
+.copyable * {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+}
+
+/* ============================================================
    موبایل: خوانایی بهتر بدون به‌هم‌ریختن ساختار
    ============================================================ */
 @media (max-width: 991.98px) {
