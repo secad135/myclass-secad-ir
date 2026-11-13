@@ -169,9 +169,45 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 12px;
+            flex-wrap: nowrap;
             position: sticky;
             top: 0;
             z-index: 500;
+        }
+
+        .admin-topbar > div:first-child {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .admin-topbar > div:last-child {
+            flex: 0 0 auto;
+            flex-wrap: nowrap;
+        }
+
+        .topbar-title {
+            flex: 1 1 auto;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .topbar-title strong {
+            display: block;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .admin-user-link {
+            display: inline-block;
+            max-width: 220px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            vertical-align: middle;
         }
 
         .admin-main {
@@ -217,6 +253,10 @@
                 overflow: hidden;
                 text-overflow: ellipsis;
                 white-space: nowrap;
+            }
+
+            .admin-user-link {
+                max-width: 140px;
             }
         }
 
@@ -497,7 +537,7 @@
                 <div class="topbar-title"><strong>@yield('title', 'پنل معلم')</strong></div>
             </div>
             <div class="d-flex gap-3 align-items-center">
-                <a href="{{ route('teacher.profile') }}" class="text-muted small text-decoration-none">
+                <a href="{{ route('teacher.profile') }}" class="admin-user-link text-muted small text-decoration-none" title="{{ auth()->user()->name }}">
                     👤 {{ auth()->user()->name }}
                 </a>
                 <form action="{{ route('logout') }}" method="POST" class="d-inline">

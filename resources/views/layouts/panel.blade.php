@@ -26,6 +26,10 @@
         .panel-navbar .navbar-brand {
             font-size: 1.05rem;
             letter-spacing: 0.2px;
+            white-space: nowrap;
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .panel-user-area {
             display: flex;
@@ -69,6 +73,7 @@
             display: block;
             font-size: 0.95rem;
             border-radius: 0;
+            white-space: nowrap;
         }
         .panel-navbar .nav-link:hover { background: rgba(255,255,255,0.15); }
         .panel-navbar .nav-link.active { background: rgba(255,255,255,0.25); font-weight: bold; }
