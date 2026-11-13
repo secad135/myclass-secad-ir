@@ -19,8 +19,7 @@
         <div class="container d-flex justify-content-between align-items-center">
             <a href="{{ route('manager.dashboard') }}">🎓 پنل ناظر مدرسه ({{ auth()->user()->school->name }})</a>
             <div class="d-flex gap-3 align-items-center">
-                <a href="{{ route('manager.profile') }}" class="small">👤 پروفایل من</a>
-                <span class="text-white small">{{ auth()->user()->name }}</span>
+                <a href="{{ route('manager.profile') }}" class="small" title="ویرایش پروفایل">{{ auth()->user()->name }}</a>
                 <form action="{{ route('logout') }}" method="POST">@csrf <button class="btn btn-sm btn-outline-light">خروج</button></form>
             </div>
         </div>
