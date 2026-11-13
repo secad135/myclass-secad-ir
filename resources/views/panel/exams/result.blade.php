@@ -189,13 +189,13 @@
     </div>
 
     {{-- مرور پاسخ‌ها --}}
-    @if($exam->show_result_immediately)
+    @if($attempt->canReviewAnswers())
         <h5 class="mb-3">مرور پاسخ‌ها</h5>
 
         @foreach($attempt->answers as $idx => $answer)
             @php
                 $question = $answer->question;
-                $correctOption = $question->options->firstWhere('is_correct', true);
+                $correctOption = $answer->correctOption ?: $question->options->firstWhere('is_correct', true);
                 $selectedOption = $answer->selectedOption;
                 $options = collect($answer->options_order)
                     ->map(fn($id) => $question->options->firstWhere('id', $id))
@@ -233,7 +233,7 @@
                                 {{ $isCorrect ? 'border-success bg-success-subtle' : '' }}
                                 {{ $isSelected && !$isCorrect ? 'border-danger bg-danger-subtle' : '' }}">
                                 <span class="fw-bold me-2">{{ $optIdx + 1 }})</span>
-                                <span class="flex-grow-1" style="font-family: 'Courier New', monospace;">{{ $option->text }}</span>
+                                <span class="flex-grow-1">{{ $option->text }}</span>
                                 @if($isCorrect)
                                     <span class="badge bg-success ms-2">✓ پاسخ صحیح</span>
                                 @endif
@@ -257,7 +257,11 @@
         @endforeach
     @else
         <div class="alert alert-info">
-            مرور پاسخ‌ها پس از بررسی توسط معلم، در دسترس خواهد بود.
+            @if($exam->show_result_immediately)
+                مرور پاسخ‌ها پس از پایان آزمون یا تایید معلم، در دسترس خواهد بود.
+            @else
+                مرور پاسخ‌ها پس از بررسی توسط معلم، در دسترس خواهد بود.
+            @endif
         </div>
     @endif
 

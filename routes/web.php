@@ -223,13 +223,13 @@ Route::middleware(['auth', 'student', 'password.changed'])
         Route::get('points', [\App\Http\Controllers\Panel\PointsController::class, 'index'])->name('points');
 
         Route::get('exams', [\App\Http\Controllers\Panel\ExamController::class, 'index'])->name('exams.index');
-        Route::post('exams/{exam}/start', [\App\Http\Controllers\Panel\ExamController::class, 'start'])->name('exams.start');
+        Route::post('exams/{exam}/start', [\App\Http\Controllers\Panel\ExamController::class, 'start'])->name('exams.start')->middleware('throttle:10,1');
         Route::get('exams/attempt/{attempt}', [\App\Http\Controllers\Panel\ExamController::class, 'show'])->name('exams.show');
-        Route::post('exams/attempt/{attempt}/submit', [\App\Http\Controllers\Panel\ExamController::class, 'submit'])->name('exams.submit');
-        Route::post('exams/attempt/{attempt}/force-submit', [\App\Http\Controllers\Panel\ExamController::class, 'forceSubmit'])->name('exams.force-submit');
-        Route::post('exams/attempt/{attempt}/log-cheat', [\App\Http\Controllers\Panel\ExamController::class, 'logCheat'])->name('exams.log-cheat');
-        Route::post('exams/attempt/{attempt}/ping', [\App\Http\Controllers\Panel\ExamController::class, 'ping'])->name('exams.ping');
-        Route::get('exams/attempt/{attempt}/check', [\App\Http\Controllers\Panel\ExamController::class, 'check'])->name('exams.check');
+        Route::post('exams/attempt/{attempt}/submit', [\App\Http\Controllers\Panel\ExamController::class, 'submit'])->name('exams.submit')->middleware('throttle:10,1');
+        Route::post('exams/attempt/{attempt}/save', [\App\Http\Controllers\Panel\ExamController::class, 'save'])->name('exams.save')->middleware('throttle:60,1');
+        Route::post('exams/attempt/{attempt}/log-cheat', [\App\Http\Controllers\Panel\ExamController::class, 'logCheat'])->name('exams.log-cheat')->middleware('throttle:20,1');
+        Route::post('exams/attempt/{attempt}/ping', [\App\Http\Controllers\Panel\ExamController::class, 'ping'])->name('exams.ping')->middleware('throttle:10,1');
+        Route::get('exams/attempt/{attempt}/check', [\App\Http\Controllers\Panel\ExamController::class, 'check'])->name('exams.check')->middleware('throttle:30,1');
         Route::get('exams/attempt/{attempt}/result', [\App\Http\Controllers\Panel\ExamController::class, 'result'])->name('exams.result');
 
         Route::get('exercises', [\App\Http\Controllers\Panel\ExerciseController::class, 'index'])->name('exercises.index');

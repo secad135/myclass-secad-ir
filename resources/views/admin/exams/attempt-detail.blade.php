@@ -145,7 +145,7 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
     @foreach($attempt->answers as $idx => $answer)
         @php
             $question = $answer->question;
-            $correctOption = $question->options->firstWhere('is_correct', true);
+            $correctOption = $answer->correctOption ?: $question->options->firstWhere('is_correct', true);
             $selectedOption = $answer->selectedOption;
             $options = collect($answer->options_order)
                 ->map(fn($id) => $question->options->firstWhere('id', $id))
@@ -174,6 +174,12 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
                         @else
                             <span class="badge bg-danger">✗ غلط</span>
                         @endif
+                        @if($answer->first_answered_at)
+                            <div class="small text-muted mt-1">
+                                زمان پاسخ:
+                                {{ (int) $answer->first_answered_at->diffInSeconds($answer->last_answered_at ?? $answer->first_answered_at) }} ثانیه
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -187,7 +193,7 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
                             {{ $isCorrect ? 'border-success bg-success-subtle' : '' }}
                             {{ $isSelected && !$isCorrect ? 'border-danger bg-danger-subtle' : '' }}">
                             <span class="fw-bold me-2">{{ $optIdx + 1 }})</span>
-                            <span class="flex-grow-1" style="font-family: 'Courier New', monospace;">{{ $option->text }}</span>
+                            <span class="flex-grow-1">{{ $option->text }}</span>
                             @if($isCorrect)
                                 <span class="badge bg-success ms-2">✓ صحیح</span>
                             @endif
@@ -200,5 +206,49 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
             </div>
         </div>
     @endforeach
+
+    @if($attempt->events->isNotEmpty())
+        <h5 class="mt-4 mb-3">رویدادهای امنیتی</h5>
+        @php
+            $eventLabels = [
+                'started'          => 'شروع آزمون',
+                'submitted'        => 'ثبت نهایی',
+                'expired'          => 'پایان زمان',
+                'client_report'    => 'گزارش مرورگر',
+                'session_bound'    => 'اتصال اولیه نشست',
+                'session_mismatch' => 'درخواست از نشست متفاوت',
+                'session_rebound'  => 'اتصال مجدد نشست',
+                'heartbeat_gap'    => 'فاصله بین ضربان‌ها',
+            ];
+        @endphp
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered align-middle bg-white">
+                <thead class="table-light">
+                    <tr>
+                        <th>رویداد</th>
+                        <th>توضیح</th>
+                        <th>زمان</th>
+                        <th>IP</th>
+                        <th>دستگاه</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($attempt->events as $event)
+                        <tr>
+                            <td>
+                                <span class="badge bg-{{ in_array($event->type, ['session_mismatch', 'client_report'], true) ? 'danger' : 'secondary' }}">
+                                    {{ $eventLabels[$event->type] ?? $event->type }}
+                                </span>
+                            </td>
+                            <td class="small">{{ $event->reason ?? '—' }}</td>
+                            <td class="small text-nowrap">{{ jdate($event->occurred_at, 'yyyy/MM/dd HH:mm:ss') }}</td>
+                            <td class="small">{{ $event->ip_address ?? '—' }}</td>
+                            <td class="small" style="max-width: 260px; overflow-wrap: anywhere;">{{ $event->user_agent ?? '—' }}</td>
+                        </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    @endif
 
 @endsection

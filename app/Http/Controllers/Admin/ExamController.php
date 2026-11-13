@@ -135,7 +135,14 @@ class ExamController extends Controller
 
         abort_unless($attempt->exam_id === $exam->id, 404);
 
-        $attempt->load(['student', 'exam', 'answers.question.options', 'answers.selectedOption']);
+        $attempt->load([
+            'student',
+            'exam',
+            'answers.question.options',
+            'answers.selectedOption',
+            'answers.correctOption',
+            'events',
+        ]);
 
         $exam->load(['classSubject.subject']);
 

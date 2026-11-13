@@ -37,6 +37,22 @@
         background: #dc3545;
         animation: pulse 1s infinite;
     }
+    .exam-watermark {
+        position: fixed;
+        inset: 0;
+        z-index: 1000;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        line-height: 1.8;
+        font-size: clamp(1.4rem, 6vw, 4rem);
+        font-weight: 700;
+        color: #000;
+        opacity: 0.055;
+        transform: rotate(-25deg);
+    }
     @keyframes pulse {
         0%, 100% { transform: scale(1); }
         50% { transform: scale(1.05); }
@@ -77,6 +93,16 @@
     .question-card .flex-grow-1 {
         min-width: 0;
     }
+    .question-text {
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
+    .option-text {
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+    }
     .code-snippet {
         background: #212529;
         color: #e9ecef;
@@ -95,7 +121,7 @@
 
     /* ============ موبایل ============ */
     @media (max-width: 991.98px) {
-        body { padding-bottom: 90px; }
+        body { padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)); }
 
         .container-fluid {
             padding-left: 10px !important;
@@ -103,10 +129,13 @@
         }
 
         .timer-fixed {
-            top: auto;
-            bottom: 16px;
-            left: 50%;
-            transform: translateX(-50%);
+            position: sticky;
+            top: 0;
+            bottom: auto;
+            left: auto;
+            transform: none;
+            margin: 0 auto 12px;
+            width: max-content;
             padding: 10px 22px;
             font-size: 1.25rem;
             min-width: 120px;
@@ -187,7 +216,7 @@
     }
 
     @media print {
-        .timer-fixed { display: none !important; }
+        body { display: none !important; }
     }
 </style>
 @endsection
@@ -195,6 +224,10 @@
 @section('content')
 
     <div id="timer" class="timer-fixed">{{ gmdate('H:i:s', $remaining) }}</div>
+    <div class="exam-watermark" aria-hidden="true">
+        {{ auth()->user()->name }}<br>
+        تلاش #{{ $attempt->attempt_number }} — {{ jdate(now(), 'yyyy/MM/dd HH:mm') }}
+    </div>
 
     <div class="container-fluid pt-3" style="max-width: 950px;">
         <h3 class="mb-1">{{ $attempt->exam->title }}</h3>
@@ -206,7 +239,7 @@
 
         <div class="alert alert-warning small">
             ⚠️ <strong>توجه:</strong> پس از شروع، نمی‌توانید آزمون را متوقف کنید. با پایان زمان، آزمون به‌طور خودکار ثبت می‌شود.
-            اگر صفحه را ببندید، پاسخ‌های انتخاب‌شده در مرورگر شما ذخیره می‌شوند و می‌توانید ادامه دهید.
+            اگر صفحه را ببندید، پاسخ‌های انتخاب‌شده ذخیره می‌شوند و می‌توانید ادامه دهید.
         </div>
 
         <form id="examForm" action="{{ route('panel.exams.submit', $attempt) }}" method="POST">
@@ -220,12 +253,12 @@
                         ->filter();
                 @endphp
 
-                <div class="question-card card" id="card_{{ $question->id }}">
+                <div class="question-card card {{ $answer->selected_option_id ? 'answered' : '' }}" id="card_{{ $question->id }}">
                     <div class="card-body">
                         <div class="d-flex align-items-start gap-2 mb-2">
                             <span class="question-number">{{ $idx + 1 }}</span>
                             <div class="flex-grow-1">
-                                <div class="mb-2" style="font-size: 1.02rem;">
+                                <div class="mb-2 question-text" style="font-size: 1.02rem;">
                                     {!! nl2br(e($question->text)) !!}
                                 </div>
 
@@ -237,14 +270,15 @@
 
                         <div class="mt-3">
                             @foreach($options as $optIdx => $option)
-                                <label class="option-label" data-qid="{{ $question->id }}">
+                                <label class="option-label {{ $answer->selected_option_id == $option->id ? 'selected' : '' }}" data-qid="{{ $question->id }}">
                                     <input type="radio"
                                            name="answers[{{ $question->id }}]"
                                            value="{{ $option->id }}"
                                            data-qid="{{ $question->id }}"
-                                           class="form-check-input me-2">
+                                           class="form-check-input me-2"
+                                           @checked($answer->selected_option_id == $option->id)>
                                     <span class="fw-bold me-1">{{ $optIdx + 1 }})</span>
-                                    <span style="font-family: 'Courier New', monospace;">{{ $option->text }}</span>
+                                    <span class="option-text">{{ $option->text }}</span>
                                 </label>
                             @endforeach
                         </div>
@@ -273,22 +307,23 @@
     var ATTEMPT_ID  = {{ $attempt->id }};
     var STORAGE_KEY = 'exam_attempt_' + ATTEMPT_ID;
     var TOTAL_Q     = {{ $attempt->total_questions }};
+    var SAVE_URL    = "{{ route('panel.exams.save', $attempt) }}";
+    var CSRF_TOKEN  = "{{ csrf_token() }}";
     var submitted   = false;
     var timerInterval = null;
+    var saveTimer = null;
+    var saving = false;
     
-    // ⚡️ محاسبه دقیق زمان از روی ساعت سیستم (نه از مقدار سرور که در کش می‌ماند)
-    var ATTEMPT_STARTED_AT = {{ $attempt->started_at->timestamp }};
-    var ATTEMPT_DURATION   = {{ $attempt->exam->duration_minutes * 60 }};
-    var SERVER_REMAINING   = {{ (int) $remaining }};
-    
-    var wallClockRemaining = Math.max(0, (ATTEMPT_STARTED_AT + ATTEMPT_DURATION) - Math.floor(Date.now() / 1000));
-    
-    // اگر اختلاف زمان محاسبه‌شده با زمان سرور بیش از ۱۰ ثانیه بود، صفحه از کش آمده → رفرش کن
-    if (Math.abs(wallClockRemaining - SERVER_REMAINING) > 10) {
-        window.location.reload(true);
+    // ⚡️ زمان باقی‌مانده از سرور گرفته می‌شود و با ساعت یکنواخت مرورگر
+    // (performance.now) کاهش می‌یابد؛ بنابراین ساعت اشتباه گوشی تاثیری ندارد.
+    var SERVER_REMAINING = {{ (int) $remaining }};
+    var remaining = SERVER_REMAINING;
+    var remainingBaseline = (window.performance && performance.now) ? performance.now() : Date.now();
+
+    function elapsedSeconds() {
+        var now = (window.performance && performance.now) ? performance.now() : Date.now();
+        return Math.floor((now - remainingBaseline) / 1000);
     }
-    
-    var remaining = wallClockRemaining;
 
     // ۱. قفل کردن دکمه بازگشت (Back) مرورگر
     history.pushState(null, null, location.href);
@@ -303,51 +338,7 @@
     // ۲. جلوگیری از تعلیق زمان در حافظه کش مرورگر (BFCache)
     window.addEventListener('pageshow', function (event) {
         if (event.persisted || (performance.getEntriesByType && performance.getEntriesByType('navigation')[0]?.type === 'back_forward')) {
-            window.location.reload(true);
-        }
-    });
-
-    // ۳. ثبت خودکار آزمون هنگام بستن مرورگر یا رفتن به آدرس دیگر
-    window.addEventListener('beforeunload', function (e) {
-        if (!submitted) {
-            // ارسال سیگنال به سرور برای ثبت فوری آزمون
-            const formData = new FormData();
-            formData.append('_token', '{{ csrf_token() }}');
-
-            navigator.sendBeacon("{{ route('panel.exams.force-submit', $attempt) }}", formData);
-
-            // نمایش پیام هشدار مرورگر
-            e.preventDefault();
-            e.returnValue = 'با خروج از این صفحه، آزمون شما به صورت خودکار ثبت می‌شود و امکان بازگشت وجود ندارد.';
-        }
-    });
-
-    // ۱. درخواست تمام‌صفحه در شروع آزمون
-    document.addEventListener('DOMContentLoaded', function() {
-        // اگر در حالت تمام‌صفحه نیستیم، با اولین کلیک کاربر تمام‌صفحه می‌شویم
-        if (!document.fullscreenElement) {
-            document.body.addEventListener('click', function requestFS() {
-                document.documentElement.requestFullscreen().catch(err => {
-                    console.log('Fullscreen failed:', err);
-                });
-                document.body.removeEventListener('click', requestFS);
-            }, { once: true });
-        }
-    });
-
-    // ۲. نظارت بر خروج از تمام‌صفحه
-    document.addEventListener('fullscreenchange', function() {
-        if (!document.fullscreenElement && !submitted) {
-            logCheat('خروج از حالت تمام‌صفحه');
-        }
-    });
-
-    // ۳. نظارت بر تغییر تب یا مینیمایز شدن
-    let localTabSwitches = 0;
-    document.addEventListener('visibilitychange', function() {
-        if (document.hidden && !submitted) {
-            localTabSwitches++;
-            logCheat('تغییر تب یا خروج از مرورگر');
+            window.location.reload();
         }
     });
 
@@ -357,10 +348,12 @@
             headers: {
                 'Content-Type': 'application/json',
                 'X-CSRF-TOKEN': '{{ csrf_token() }}'
-            }
-        }).then(() => {
+            },
+            body: JSON.stringify({ reason: reason })
+        }).then(function (r) {
+            if (!r.ok) throw new Error('log failed');
             console.warn('تقلب ثبت شد: ' + reason);
-        });
+        }).catch(function () {});
 
         // نمایش یک هشدار قرمز به دانش‌آموز
         const alertDiv = document.createElement('div');
@@ -371,7 +364,7 @@
         setTimeout(() => alertDiv.remove(), 3000);
     }
 
-    // ۴. جلوگیری از راست کلیک و کپی
+    // ۲. جلوگیری از راست کلیک و کپی
     document.addEventListener('contextmenu', event => event.preventDefault());
     document.addEventListener('copy', event => {
         event.preventDefault();
@@ -386,6 +379,16 @@
 
             if (timerInterval) clearInterval(timerInterval);
             timerInterval = setInterval(tickTimer, 1000);
+
+            // ذخیره خودکار پاسخ‌ها روی سرور هر ۱۵ ثانیه
+            setInterval(function () {
+                if (!submitted) saveAnswersToServer();
+            }, 15000);
+
+            // آخرین ذخیره هنگام بستن یا ترک صفحه
+            window.addEventListener('pagehide', function () {
+                if (!submitted) beaconSave();
+            });
             
             // ارسال ضربان (Heartbeat) به سرور هر ۲۵ ثانیه
             setInterval(function() {
@@ -420,6 +423,10 @@
         try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch (e) {}
 
         Object.keys(saved).forEach(function (qid) {
+            if (document.querySelector('input[name="answers[' + qid + ']"]:checked')) {
+                return;
+            }
+
             var radio = document.querySelector('input[name="answers[' + qid + ']"][value="' + saved[qid] + '"]');
             if (radio) {
                 radio.checked = true;
@@ -431,13 +438,63 @@
         });
     }
 
-    function saveAnswers() {
+    function collectAnswers() {
         var data = {};
         document.querySelectorAll('input[type=radio][name^="answers"]:checked').forEach(function (r) {
             var match = r.name.match(/answers\[(\d+)\]/);
             if (match) data[match[1]] = r.value;
         });
+        return data;
+    }
+
+    function saveAnswers() {
+        var data = collectAnswers();
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); } catch (e) {}
+    }
+
+    function saveAnswersToServer() {
+        if (submitted || saving) return;
+        saving = true;
+
+        fetch(SAVE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN
+            },
+            body: JSON.stringify({ answers: collectAnswers() })
+        })
+        .then(function (r) {
+            return r.json().catch(function () { return {}; });
+        })
+        .then(function (data) {
+            if (data.status && data.status !== 'in_progress') {
+                submitted = true;
+                window.location.href = "{{ route('panel.exams.result', $attempt) }}";
+            }
+        })
+        .catch(function () {})
+        .finally(function () { saving = false; });
+    }
+
+    function scheduleServerSave() {
+        if (submitted) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveAnswersToServer, 800);
+    }
+
+    function beaconSave() {
+        if (!navigator.sendBeacon) return;
+
+        var data = collectAnswers();
+        var formData = new FormData();
+        formData.append('_token', CSRF_TOKEN);
+
+        Object.keys(data).forEach(function (qid) {
+            formData.append('answers[' + qid + ']', data[qid]);
+        });
+
+        navigator.sendBeacon(SAVE_URL, formData);
     }
 
     function updateAnsweredCount() {
@@ -467,8 +524,8 @@
     function tickTimer() {
         if (submitted) return;
         
-        // محاسبه مجدد از روی ساعت واقعی (جلوگیری از ریست شدن زمان در کش)
-        remaining = Math.max(0, (ATTEMPT_STARTED_AT + ATTEMPT_DURATION) - Math.floor(Date.now() / 1000));
+        // کاهش زمان از روی ساعت یکنواخت مرورگر (مستقل از ساعت گوشی)
+        remaining = Math.max(0, SERVER_REMAINING - elapsedSeconds());
         updateTimerDisplay();
 
         if (remaining <= 0) {
@@ -500,6 +557,7 @@
 
                 saveAnswers();
                 updateAnsweredCount();
+                scheduleServerSave();
             });
         });
     }
@@ -530,18 +588,6 @@
         safeInit();
     }
 
-    // تشخیص کلید PrintScreen (فقط به عنوان هشدار و ثبت تخلف)
-    document.addEventListener('keyup', function(e) {
-        if (e.key === 'PrintScreen' && !submitted) {
-            // پاک کردن حافظه موقت (کلیپ‌بورد) برای بی‌فایده کردن اسکرین‌شات
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText('').catch(() => {});
-            }
-
-            logCheat('اسکرین‌شات گرفتن (PrintScreen)');
-            alert('⚠️ هشدار: اسکرین‌شات گرفتن در حین آزمون تخلف است و ثبت شد!');
-        }
-    });
 })();
 </script>
 @endpush

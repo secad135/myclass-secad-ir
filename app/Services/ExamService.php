@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Exam;
 use App\Models\ExamAttempt;
 use App\Models\ExamAttemptAnswer;
+use App\Models\ExamEvent;
 use App\Models\Question;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
@@ -16,7 +17,10 @@ class ExamService
      */
     public function getAvailableExamsForStudent(User $student)
     {
-        $classIds = $student->classes()->pluck('school_classes.id')->toArray();
+        $classIds = $student->classes()
+            ->wherePivot('status', 'active')
+            ->pluck('school_classes.id')
+            ->toArray();
 
         if (empty($classIds)) {
             return collect();
@@ -37,6 +41,15 @@ class ExamService
         if (!$exam->is_active) {
             return ['ok' => false, 'reason' => 'این آزمون غیرفعال است.'];
         }
+
+        $classIds = $student->classes()
+            ->wherePivot('status', 'active')
+            ->pluck('school_classes.id');
+
+        if (!$exam->classSubject || !$classIds->contains($exam->classSubject->school_class_id)) {
+            return ['ok' => false, 'reason' => 'شما به این آزمون دسترسی ندارید.'];
+        }
+
         if (!$exam->isOpenNow()) {
             return ['ok' => false, 'reason' => 'این آزمون در بازه دسترسی نیست.'];
         }
@@ -53,6 +66,15 @@ class ExamService
                 'reason'           => 'شما یک آزمون در حال انجام دارید.',
                 'in_progress_id'   => $inProgress->id,
             ];
+        }
+
+        $otherInProgress = ExamAttempt::where('student_id', $student->id)
+            ->where('status', 'in_progress')
+            ->where('exam_id', '!=', $exam->id)
+            ->exists();
+
+        if ($otherInProgress) {
+            return ['ok' => false, 'reason' => 'شما یک آزمون دیگر در حال انجام دارید.'];
         }
 
         $attemptsCount = $exam->attempts()
@@ -73,43 +95,76 @@ class ExamService
     /**
      * ساخت یک attempt جدید با سوالات تصادفی
      */
-    public function createAttempt(Exam $exam, User $student): ExamAttempt
+    public function createAttempt(Exam $exam, User $student, array $context = []): ExamAttempt
     {
-        $check = $this->canAttempt($exam, $student);
-        if (!$check['ok']) {
-            throw new \Exception($check['reason']);
-        }
+        return DB::transaction(function () use ($exam, $student, $context) {
+            // قفل دانش‌آموز از شروع هم‌زمان چند آزمون جلوگیری می‌کند
+            DB::table('users')->where('id', $student->id)->lockForUpdate()->first();
 
-        $topicIds = $exam->topics->pluck('id');
+            // قفل رکورد آزمون از ساخت هم‌زمان چند تلاش جلوگیری می‌کند
+            $lockedExam = Exam::whereKey($exam->id)->lockForUpdate()->firstOrFail();
 
-        $questions = Question::active()
-            ->whereIn('topic_id', $topicIds)
-            ->inRandomOrder()
-            ->limit($exam->question_count)
-            ->get();
+            $check = $this->canAttempt($lockedExam, $student);
+            if (!$check['ok']) {
+                throw new \Exception($check['reason']);
+            }
 
-        if ($questions->count() < $exam->question_count) {
-            throw new \Exception("سوالات کافی وجود ندارد. فقط {$questions->count()} سوال فعال در مباحث انتخابی هست.");
-        }
+            $topicIds = $lockedExam->topics->pluck('id');
 
-        return DB::transaction(function () use ($exam, $student, $questions) {
-            $attemptNumber = $exam->attempts()
+            $previousQuestionIds = ExamAttemptAnswer::query()
+                ->whereHas('attempt', function ($q) use ($lockedExam, $student) {
+                    $q->where('exam_id', $lockedExam->id)
+                        ->where('student_id', $student->id)
+                        ->whereIn('status', ['submitted', 'expired']);
+                })
+                ->pluck('question_id')
+                ->unique()
+                ->values()
+                ->toArray();
+
+            $baseQuery = Question::active()->whereIn('topic_id', $topicIds);
+
+            $questions = (clone $baseQuery)
+                ->whereNotIn('id', $previousQuestionIds)
+                ->inRandomOrder()
+                ->limit($lockedExam->question_count)
+                ->get();
+
+            // اگر سوال تکراری‌نشده کافی نبود، بقیه از مخزن کامل تکمیل می‌شود
+            if ($questions->count() < $lockedExam->question_count) {
+                $extra = (clone $baseQuery)
+                    ->whereNotIn('id', $questions->pluck('id')->toArray())
+                    ->inRandomOrder()
+                    ->limit($lockedExam->question_count - $questions->count())
+                    ->get();
+
+                $questions = $questions->merge($extra);
+            }
+
+            if ($questions->count() < $lockedExam->question_count) {
+                throw new \Exception("سوالات کافی وجود ندارد. فقط {$questions->count()} سوال فعال در مباحث انتخابی هست.");
+            }
+
+            $attemptNumber = $lockedExam->attempts()
                 ->where('student_id', $student->id)
                 ->count() + 1;
 
             $attempt = ExamAttempt::create([
-                'exam_id'         => $exam->id,
+                'exam_id'         => $lockedExam->id,
                 'student_id'      => $student->id,
                 'attempt_number'  => $attemptNumber,
                 'started_at'      => now(),
                 'total_questions' => $questions->count(),
                 'status'          => 'in_progress',
+                'session_id'      => $context['session_id'] ?? null,
+                'ip_address'      => $context['ip_address'] ?? null,
+                'user_agent'      => $context['user_agent'] ?? null,
             ]);
 
             foreach ($questions as $question) {
                 $options = $question->options;
 
-                if ($exam->shuffle_options) {
+                if ($lockedExam->shuffle_options) {
                     $options = $options->shuffle();
                 }
 
@@ -117,6 +172,7 @@ class ExamService
                     'exam_attempt_id'    => $attempt->id,
                     'question_id'        => $question->id,
                     'selected_option_id' => null,
+                    'correct_option_id'  => $question->options->firstWhere('is_correct', true)?->id,
                     'options_order'      => $options->pluck('id')->toArray(),
                     'is_correct'         => false,
                 ]);
@@ -129,47 +185,156 @@ class ExamService
     /**
      * ثبت پاسخ‌ها و محاسبه نمره
      */
-    public function submitAttempt(ExamAttempt $attempt, array $answers, string $status = 'submitted'): ExamAttempt
+    public function submitAttempt(ExamAttempt $attempt, array $answers, string $status = 'submitted', array $context = []): ExamAttempt
     {
-        if ($attempt->status !== 'in_progress') {
-            throw new \Exception('این آزمون قبلاً ثبت شده است.');
-        }
+        return DB::transaction(function () use ($attempt, $answers, $status, $context) {
+            $locked = ExamAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
 
-        return DB::transaction(function () use ($attempt, $answers, $status) {
+            if ($locked->status !== 'in_progress') {
+                throw new \Exception('این آزمون قبلاً ثبت شده است.');
+            }
+
+            $locked->load(['answers.question.options']);
             $correctCount = 0;
 
-            foreach ($attempt->answers as $answer) {
-                $selectedId = $answers[$answer->question_id] ?? null;
+            foreach ($locked->answers as $answer) {
+                $hasSubmittedAnswer = array_key_exists($answer->question_id, $answers);
+                $previousSelectedId = $answer->selected_option_id;
+                $selectedId = $hasSubmittedAnswer
+                    ? $answers[$answer->question_id]
+                    : $answer->selected_option_id;
 
-                $isCorrect = false;
-                if ($selectedId) {
-                    $correctOption = $answer->question->options->firstWhere('is_correct', true);
-                    $isCorrect = $correctOption && (int) $correctOption->id === (int) $selectedId;
-                }
+                $selectedId = $this->validSelectedOptionId($answer, $selectedId);
+                $correctId = $answer->correct_option_id
+                    ?: $answer->question->options->firstWhere('is_correct', true)?->id;
 
-                $answer->update([
+                $isCorrect = $selectedId && $correctId
+                    && (int) $selectedId === (int) $correctId;
+
+                $updates = [
                     'selected_option_id' => $selectedId,
                     'is_correct'         => $isCorrect,
-                ]);
+                ];
+
+                $answerChanged = $hasSubmittedAnswer
+                    && (int) $selectedId !== (int) $previousSelectedId;
+
+                if ($selectedId && ($answerChanged || !$answer->first_answered_at)) {
+                    if (!$answer->first_answered_at) {
+                        $updates['first_answered_at'] = now();
+                    }
+                    $updates['last_answered_at'] = now();
+                } elseif (!$selectedId) {
+                    $updates['first_answered_at'] = null;
+                    $updates['last_answered_at'] = null;
+                }
+
+                $answer->update($updates);
 
                 if ($isCorrect) {
                     $correctCount++;
                 }
             }
 
-            $score = $attempt->total_questions > 0
-                ? round(($correctCount / $attempt->total_questions) * 20, 2)
+            $score = $locked->total_questions > 0
+                ? round(($correctCount / $locked->total_questions) * 20, 2)
                 : 0;
 
-            $attempt->update([
+            $locked->update([
                 'finished_at'     => now(),
                 'total_correct'   => $correctCount,
                 'score'           => $score,
                 'status'          => $status,
             ]);
 
-            return $attempt->fresh();
+            ExamEvent::create([
+                'exam_attempt_id' => $locked->id,
+                'type'            => $status === 'expired' ? 'expired' : 'submitted',
+                'ip_address'      => $context['ip_address'] ?? null,
+                'user_agent'      => $context['user_agent'] ?? null,
+                'metadata'        => [
+                    'score'   => $score,
+                    'correct' => $correctCount,
+                    'total'   => $locked->total_questions,
+                ],
+                'occurred_at'     => now(),
+            ]);
+
+            return $locked->fresh();
         });
+    }
+
+    /**
+     * ذخیره خودکار پاسخ‌ها بدون ثبت نهایی آزمون
+     */
+    public function saveAnswers(ExamAttempt $attempt, array $answers): ExamAttempt
+    {
+        return DB::transaction(function () use ($attempt, $answers) {
+            $locked = ExamAttempt::whereKey($attempt->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->status !== 'in_progress') {
+                throw new \Exception('این آزمون دیگر در حال انجام نیست.');
+            }
+            if ($locked->isExpired()) {
+                throw new \Exception('زمان آزمون به پایان رسیده است.');
+            }
+
+            $locked->load(['answers.question.options']);
+
+            foreach ($locked->answers as $answer) {
+                if (!array_key_exists($answer->question_id, $answers)) {
+                    continue;
+                }
+
+                $previousSelectedId = $answer->selected_option_id;
+                $selectedId = $this->validSelectedOptionId($answer, $answers[$answer->question_id]);
+                $correctId = $answer->correct_option_id
+                    ?: $answer->question->options->firstWhere('is_correct', true)?->id;
+
+                $updates = [
+                    'selected_option_id' => $selectedId,
+                    'is_correct'         => $selectedId && $correctId
+                        && (int) $selectedId === (int) $correctId,
+                ];
+
+                $answerChanged = (int) $selectedId !== (int) $previousSelectedId;
+
+                if ($selectedId && ($answerChanged || !$answer->first_answered_at)) {
+                    if (!$answer->first_answered_at) {
+                        $updates['first_answered_at'] = now();
+                    }
+                    $updates['last_answered_at'] = now();
+                } elseif (!$selectedId) {
+                    $updates['first_answered_at'] = null;
+                    $updates['last_answered_at'] = null;
+                }
+
+                $answer->update($updates);
+            }
+
+            $locked->touch();
+
+            return $locked->fresh();
+        });
+    }
+
+    /**
+     * فقط گزینه‌ای معتبر است که متعلق به همان سؤال و همان ترتیب ذخیره‌شده باشد.
+     */
+    private function validSelectedOptionId(ExamAttemptAnswer $answer, $selectedId): ?int
+    {
+        if ($selectedId === null || $selectedId === '') {
+            return null;
+        }
+
+        $selectedId = (int) $selectedId;
+        $order = array_map('intval', $answer->options_order ?? []);
+
+        if (!in_array($selectedId, $order, true)) {
+            return null;
+        }
+
+        return $answer->question->options->firstWhere('id', $selectedId) ? $selectedId : null;
     }
 
     /**

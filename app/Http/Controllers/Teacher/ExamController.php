@@ -142,7 +142,14 @@ class ExamController extends BaseController
         $service = new ExamService();
         $service->expireStaleAttempts();
 
-        $attempt->load(['student', 'exam', 'answers.question.options', 'answers.selectedOption']);
+        $attempt->load([
+            'student',
+            'exam',
+            'answers.question.options',
+            'answers.selectedOption',
+            'answers.correctOption',
+            'events',
+        ]);
         $exam->load(['classSubject.subject']);
 
         return view('admin.exams.attempt-detail', compact('exam', 'attempt'));
