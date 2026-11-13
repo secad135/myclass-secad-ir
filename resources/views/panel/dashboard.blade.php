@@ -110,6 +110,9 @@
                     <div>
                         <div class="opacity-75 small fw-bold mb-1">رتبه در کلاس</div>
                         <h2 class="mb-0 fw-bold">{{ $rank }}</h2>
+                        @if(!is_null($rankScore))
+                            <small class="opacity-75 d-block">نمره رتبه: {{ number_format($rankScore, 1) }}</small>
+                        @endif
                         @if(isset($totalStudents) && $totalStudents > 0)
                             <small class="opacity-75">از بین {{ $totalStudents }} دانش‌آموز</small>
                         @endif

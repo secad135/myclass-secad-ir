@@ -236,51 +236,7 @@ class StudentReportService
     {
         $classSubjectIds = $class->classSubjects()->pluck('id')->toArray();
 
-        if (empty($classSubjectIds)) {
-            return collect();
-        }
-
-        $students = $class->students()->orderBy('name')->get();
-
-        $rows = $students->map(function (User $student) use ($classSubjectIds, $fromDate, $toDate) {
-            $entries = PointEntry::query()
-                ->where('student_id', $student->id)
-                ->whereIn('class_subject_id', $classSubjectIds)
-                ->whereBetween('entry_date', [$fromDate, $toDate])
-                ->get();
-
-            $points      = (int) $entries->sum('points');
-            $positiveSum = (int) $entries->where('points', '>', 0)->sum('points');
-            $negativeSum = (int) $entries->where('points', '<', 0)->sum('points');
-
-            $stats = $this->getOverallStats($student, $fromDate, $toDate, $classSubjectIds);
-
-            return [
-                'student'      => $student,
-                'points'       => $points,
-                'positive_sum' => $positiveSum,
-                'negative_sum' => $negativeSum,
-                'by_subject'   => $this->buildSubjectPoints($entries),
-                'stats'        => $stats,
-                'percentage'   => $stats['percentage'],
-            ];
-        });
-
-        return $rows
-            ->sort(function ($a, $b) {
-                if ($b['points'] !== $a['points']) {
-                    return $b['points'] <=> $a['points'];
-                }
-                if ($b['percentage'] !== $a['percentage']) {
-                    return $b['percentage'] <=> $a['percentage'];
-                }
-                return strcmp($a['student']->name, $b['student']->name);
-            })
-            ->values()
-            ->map(function ($row, $i) {
-                $row['rank'] = $i + 1;
-                return $row;
-            });
+        return app(RankingService::class)->rank($class, $classSubjectIds, $fromDate, $toDate);
     }
 
     /**
@@ -292,43 +248,7 @@ class StudentReportService
         string $fromDate,
         string $toDate
     ): Collection {
-        $students = $class->students()->orderBy('name')->get();
-
-        $rows = $students->map(function (User $student) use ($classSubject, $fromDate, $toDate) {
-            $entries = PointEntry::query()
-                ->where('student_id', $student->id)
-                ->where('class_subject_id', $classSubject->id)
-                ->whereBetween('entry_date', [$fromDate, $toDate])
-                ->get();
-
-            $stats = $this->getAttendanceStats($student, $classSubject, $fromDate, $toDate);
-
-            return [
-                'student'      => $student,
-                'points'       => (int) $entries->sum('points'),
-                'positive_sum' => (int) $entries->where('points', '>', 0)->sum('points'),
-                'negative_sum' => (int) $entries->where('points', '<', 0)->sum('points'),
-                'by_subject'   => $this->buildSubjectPoints($entries),
-                'stats'        => $stats,
-                'percentage'   => $stats['percentage'],
-            ];
-        });
-
-        return $rows
-            ->sort(function ($a, $b) {
-                if ($b['points'] !== $a['points']) {
-                    return $b['points'] <=> $a['points'];
-                }
-                if ($b['percentage'] !== $a['percentage']) {
-                    return $b['percentage'] <=> $a['percentage'];
-                }
-                return strcmp($a['student']->name, $b['student']->name);
-            })
-            ->values()
-            ->map(function ($row, $i) {
-                $row['rank'] = $i + 1;
-                return $row;
-            });
+        return app(RankingService::class)->rank($class, [$classSubject->id], $fromDate, $toDate);
     }
 
     /**
@@ -376,6 +296,7 @@ class StudentReportService
             return [
                 'students_count' => 0,
                 'avg_points'     => 0,
+                'avg_rank_score' => 0,
                 'avg_percentage' => 0,
                 'total_absences' => 0,
                 'total_lates'    => 0,
@@ -385,6 +306,7 @@ class StudentReportService
         return [
             'students_count' => $ranking->count(),
             'avg_points'     => round($ranking->avg('points'), 1),
+            'avg_rank_score' => round($ranking->avg('rank_score'), 1),
             'avg_percentage' => round($ranking->avg('percentage'), 1),
             'total_absences' => (int) $ranking->sum(fn($r) => $r['stats']['absent']),
             'total_lates'    => (int) $ranking->sum(fn($r) => $r['stats']['late']),

@@ -31,11 +31,13 @@ class DashboardController extends Controller
 
         $class = $student->classes()->first();
         $rank = '—';
+        $rankScore = null;
         $totalStudents = 0;
         if ($class) {
             $ranking = $service->getClassRanking($class, $fromDate, $toDate);
             $rankRow = $ranking->firstWhere('student.id', $student->id);
             $rank = $rankRow ? $rankRow['rank'] : '—';
+            $rankScore = $rankRow['rank_score'] ?? null;
             $totalStudents = $ranking->count();
         }
 
@@ -73,7 +75,7 @@ class DashboardController extends Controller
 
         return view('panel.dashboard', compact(
             'student', 'currentYear', 'overall', 'points', 'status',
-            'rank', 'totalStudents', 'newExams', 'retakeableCount', 'activeExercises'
+            'rank', 'rankScore', 'totalStudents', 'newExams', 'retakeableCount', 'activeExercises'
         ));
     }
 }

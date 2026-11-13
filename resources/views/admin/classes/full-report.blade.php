@@ -299,6 +299,7 @@
                             <th class="text-center">{{ $cs->subject?->name ?? '—' }}</th>
                         @endforeach
                         <th class="text-center">جمع دروس</th>
+                        <th class="text-center">نمره رتبه</th>
                         <th class="text-center">درصد حضور</th>
                         <th class="text-center">غایب</th>
                         <th class="text-center">تاخیر</th>
@@ -335,13 +336,20 @@
                                 </small>
                                 @endif
                         </td>
+                        <td class="text-center">
+                            @if(!is_null($row['rank_score'] ?? null))
+                                <strong>{{ number_format($row['rank_score'], 1) }}</strong>
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td class="text-center">{{ $row['percentage'] }}٪</td>
                         <td class="text-center">{{ $row['stats']['absent'] }}</td>
                         <td class="text-center" style="color:#b45309;">{{ $row['stats']['late'] }}</td>
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="{{ 5 + $classSubjects->count() }}" class="text-center text-muted">هیچ دانش‌آموزی در این کلاس ثبت‌نام نشده است.</td>
+                        <td colspan="{{ 7 + $classSubjects->count() }}" class="text-center text-muted">هیچ دانش‌آموزی در این کلاس ثبت‌نام نشده است.</td>
                     </tr>
                     @endforelse
                 </tbody>
@@ -404,7 +412,68 @@
                         <small class="text-muted">جلسه</small>
                     </div>
                 </div>
+                <div class="col">
+                    <div class="stat-box">
+                        <div class="small text-muted">نمره رتبه</div>
+                        <div class="value">{{ !is_null($detail['rank_score'] ?? null) ? number_format($detail['rank_score'], 1) : '—' }}</div>
+                        <small class="text-muted">از ۱۰۰</small>
+                    </div>
+                </div>
             </div>
+
+            @if(!empty($detail['rank_components'] ?? []))
+                @php $rc = $detail['rank_components']; @endphp
+                <div class="mb-3">
+                    <h5 class="mb-2">ترکیب نمره رتبه</h5>
+                    <table class="table table-sm table-bordered align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>مؤلفه</th>
+                                <th class="text-center">نمره (۰–۱۰۰)</th>
+                                <th class="text-center">وزن</th>
+                                <th class="text-center">جزئیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>آزمون‌ها</td>
+                                <td class="text-center">{{ $rc['exams']['score'] !== null ? number_format($rc['exams']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($rc['exams']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">
+                                    {{ $rc['exams']['counted'] }} آزمون
+                                    @if($rc['exams']['missed'] > 0) · <span class="text-danger">{{ $rc['exams']['missed'] }} عدم شرکت</span> @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>تمرین‌ها</td>
+                                <td class="text-center">{{ $rc['exercises']['score'] !== null ? number_format($rc['exercises']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($rc['exercises']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">
+                                    {{ $rc['exercises']['counted'] }} تمرین
+                                    @if($rc['exercises']['missed'] > 0) · <span class="text-danger">{{ $rc['exercises']['missed'] }} عدم شرکت</span> @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>حضور</td>
+                                <td class="text-center">{{ $rc['attendance']['score'] !== null ? number_format($rc['attendance']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($rc['attendance']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">
+                                    {{ $rc['attendance']['absence_days'] }} روز غیبت از {{ $rc['attendance']['held_days'] }} روز
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>امتیاز دستی</td>
+                                <td class="text-center">{{ $rc['manual']['score'] !== null ? number_format($rc['manual']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($rc['manual']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">{{ $rc['manual']['points'] }} امتیاز</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <small class="text-muted d-block mt-1">
+                        نمره رتبه از میانگین وزنی مؤلفه‌های موجود محاسبه می‌شود؛ مؤلفه بدون داده، وزنش بین بقیه تقسیم می‌شود.
+                    </small>
+                </div>
+            @endif
 
             {{-- خلاصه به تفکیک درس --}}
             @if($detail['subjectSummary']->count() > 0)

@@ -96,6 +96,7 @@ class ReportController extends Controller
 
             $stats = $row['stats'] ?? $service->getOverallStats($student, $fromDate, $toDate);
             $rank = $row['rank'] ?? '—';
+            $rankScore = $row['rank_score'] ?? null;
             $percentage = $row['percentage'] ?? $stats['percentage'];
             $positiveSum = $row['positive_sum'] ?? 0;
             $negativeSum = $row['negative_sum'] ?? 0;
@@ -103,6 +104,8 @@ class ReportController extends Controller
 
             return [
                 'rank' => $rank,
+                'rank_score' => $rankScore,
+                'rank_components' => $row['rank_components'] ?? [],
                 'student' => $student,
                 'points' => $points,
                 'stats' => $stats,

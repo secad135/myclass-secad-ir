@@ -279,6 +279,7 @@ $layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'la
                         <th class="text-center">{{ $cs->subject?->name ?? '—' }}</th>
                     @endforeach
                     <th class="text-center">جمع دروس</th>
+                    <th class="text-center">نمره رتبه</th>
                     <th class="text-center">درصد حضور</th>
                     <th class="text-center">غایب</th>
                     <th class="text-center">تاخیر</th>
@@ -327,6 +328,22 @@ $layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'la
                             </small>
                         @endif
                     </td>
+                    <td class="text-center">
+                        @php
+                            $rankScore = $row['rank_score'] ?? null;
+                            $rankColor = $rankScore === null ? 'secondary' : ($rankScore >= 85 ? 'success' : ($rankScore >= 70 ? 'warning text-dark' : ($rankScore >= 50 ? 'info text-dark' : 'danger')));
+                        @endphp
+                        @if($rankScore !== null)
+                            <span class="badge bg-{{ $rankColor }}" style="font-size: 0.95rem;">{{ number_format($rankScore, 1) }}</span>
+                            <br>
+                            <button type="button" class="btn btn-sm btn-outline-secondary mt-1 py-0 px-2" style="font-size: 0.72rem;"
+                                data-bs-toggle="modal" data-bs-target="#rankModal{{ $row['student']->id }}">
+                                جزئیات
+                            </button>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </td>
                     <td class="text-center"><span class="badge bg-{{ $pctColor }}">{{ $pct }}٪</span></td>
                     <td class="text-center">
                         @if($row['stats']['absent'] > 0)
@@ -352,12 +369,81 @@ $layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'la
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="{{ 9 + $classSubjects->count() }}" class="text-center text-muted py-4">برای این کلاس در این بازه هیچ داده‌ای وجود ندارد.</td>
+                    <td colspan="{{ 8 + $classSubjects->count() }}" class="text-center text-muted py-4">برای این کلاس در این بازه هیچ داده‌ای وجود ندارد.</td>
                 </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </div>
+
+@foreach($ranking as $row)
+    @php $components = $row['rank_components'] ?? []; @endphp
+    @if(!empty($components))
+    <div class="modal fade" id="rankModal{{ $row['student']->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h6 class="modal-title">ترکیب نمره رتبه — {{ $row['student']->name }}</h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="بستن"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>مؤلفه</th>
+                                <th class="text-center">نمره (۰–۱۰۰)</th>
+                                <th class="text-center">وزن</th>
+                                <th class="text-center">جزئیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>آزمون‌ها</td>
+                                <td class="text-center">{{ $components['exams']['score'] !== null ? number_format($components['exams']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($components['exams']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">
+                                    {{ $components['exams']['counted'] }} آزمون
+                                    @if($components['exams']['missed'] > 0)
+                                        · <span class="text-danger">{{ $components['exams']['missed'] }} عدم شرکت</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>تمرین‌ها</td>
+                                <td class="text-center">{{ $components['exercises']['score'] !== null ? number_format($components['exercises']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($components['exercises']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">
+                                    {{ $components['exercises']['counted'] }} تمرین
+                                    @if($components['exercises']['missed'] > 0)
+                                        · <span class="text-danger">{{ $components['exercises']['missed'] }} عدم شرکت</span>
+                                    @endif
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>حضور</td>
+                                <td class="text-center">{{ $components['attendance']['score'] !== null ? number_format($components['attendance']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($components['attendance']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">
+                                    {{ $components['attendance']['absence_days'] }} روز غیبت از {{ $components['attendance']['held_days'] }} روز
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>امتیاز دستی</td>
+                                <td class="text-center">{{ $components['manual']['score'] !== null ? number_format($components['manual']['score'], 1) : '—' }}</td>
+                                <td class="text-center">{{ (int) round($components['manual']['weight'] * 100) }}٪</td>
+                                <td class="text-center small text-muted">{{ $components['manual']['points'] }} امتیاز</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="alert alert-light border mt-3 mb-0 small text-muted">
+                        نمره رتبه از میانگین وزنی مؤلفه‌های موجود محاسبه می‌شود؛ اگر مؤلفه‌ای داده‌ای نداشته باشد، وزن آن بین بقیه تقسیم می‌شود.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+@endforeach
 
 @endsection
