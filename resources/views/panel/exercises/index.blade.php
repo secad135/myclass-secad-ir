@@ -74,6 +74,8 @@
         @php
             $status = $exercise->statusLabel();
             $sub = $submissions->get($exercise->id);
+            $expired = $exercise->isExpired();
+            $canSubmit = $exercise->isAcceptingSubmissions();
         @endphp
 
         <div class="card mb-3">
@@ -109,9 +111,21 @@
                             <span class="badge bg-warning text-dark">در انتظار تصحیح</span>
                         @endif
                         <div class="mt-2">
-                            <a href="{{ route('panel.exercises.show', $exercise) }}" class="btn btn-sm btn-primary">
-                                {{ $sub ? 'مشاهده' : 'شرکت / پاسخ' }}
-                            </a>
+                            @if($sub)
+                                <a href="{{ route('panel.exercises.show', $exercise) }}" class="btn btn-sm btn-outline-primary">
+                                    مشاهده
+                                </a>
+                            @elseif(!$expired)
+                                <a href="{{ route('panel.exercises.show', $exercise) }}" class="btn btn-sm btn-primary">
+                                    شرکت / پاسخ
+                                </a>
+                            @elseif($canSubmit)
+                                <a href="{{ route('panel.exercises.show', $exercise) }}" class="btn btn-sm btn-warning">
+                                    ارسال با تأخیر
+                                </a>
+                            @else
+                                <span class="small text-muted">مهلت پاسخ‌دهی تمام شده است.</span>
+                            @endif
                         </div>
                     </div>
                 </div>
