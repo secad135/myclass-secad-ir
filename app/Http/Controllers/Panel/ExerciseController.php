@@ -2,14 +2,19 @@
 
 namespace App\Http\Controllers\Panel;
 
+use App\Exceptions\UploadRejectedException;
 use App\Http\Controllers\Controller;
 use App\Models\Exercise;
 use App\Models\ExerciseSubmission;
+use App\Services\Uploads\UploadService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ExerciseController extends Controller
 {
+    public function __construct(private readonly UploadService $uploads)
+    {
+    }
+
     public function index()
     {
         $student = auth()->user();
@@ -87,8 +92,15 @@ class ExerciseController extends Controller
 
         $filePath = $existing?->file_path;
         if ($request->hasFile('file')) {
-            if ($filePath) Storage::disk('public')->delete($filePath);
-            $filePath = $request->file('file')->store('exercise-submissions', 'public');
+            try {
+                $newPath = $this->uploads
+                    ->store($request->file('file'), 'exercise_submission', 'exercise-submissions')['path'];
+            } catch (UploadRejectedException $e) {
+                return back()->withInput()->with('error', $e->getMessage());
+            }
+
+            $this->uploads->delete($filePath);
+            $filePath = $newPath;
         }
 
         $isLate = $exercise->isExpired();

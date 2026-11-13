@@ -2,14 +2,20 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Exceptions\UploadRejectedException;
 use App\Http\Controllers\Controller;
 use App\Models\Question;
 use App\Models\Topic;
+use App\Services\Uploads\UploadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class QuestionController extends Controller
 {
+    public function __construct(private readonly UploadService $uploads)
+    {
+    }
+
     public function index(Request $request)
     {
         $topicId = $request->input('topic_id');
@@ -136,6 +142,14 @@ class QuestionController extends Controller
 
         if (!$request->hasFile('json_file') && !$request->filled('json_text')) {
             return back()->withInput()->with('error', 'یا فایل JSON آپلود کنید یا متن JSON را وارد کنید.');
+        }
+
+        if ($request->hasFile('json_file')) {
+            try {
+                $this->uploads->inspect($request->file('json_file'), 'question_import');
+            } catch (UploadRejectedException $e) {
+                return back()->withInput()->with('error', $e->getMessage());
+            }
         }
 
         $jsonContent = $request->hasFile('json_file')

@@ -33,7 +33,7 @@
     @if(isset($exercise) && $exercise->attachment_path)
         <small class="text-muted d-block mt-1">
             فایل فعلی:
-            <a href="{{ Storage::disk('public')->url($exercise->attachment_path) }}" target="_blank">دانلود</a>
+            <a href="{{ URL::temporarySignedRoute('files.download', now()->addMinutes(60), ['path' => $exercise->attachment_path]) }}" target="_blank">دانلود</a>
         </small>
     @endif
 </div>

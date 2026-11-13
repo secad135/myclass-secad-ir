@@ -192,7 +192,7 @@
 
             @if($exercise->attachment_path)
                 <hr>
-                <a href="{{ Storage::disk('public')->url($exercise->attachment_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <a href="{{ URL::temporarySignedRoute('files.download', now()->addMinutes(60), ['path' => $exercise->attachment_path]) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                     📎 دانلود فایل ضمیمه
                 </a>
             @endif
@@ -246,7 +246,7 @@
                 @endif
                 @if($submission->file_path)
                     <div class="mt-2">
-                        <a href="{{ Storage::disk('public')->url($submission->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                        <a href="{{ URL::temporarySignedRoute('files.download', now()->addMinutes(60), ['path' => $submission->file_path]) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                             📎 فایل ارسال‌شده
                         </a>
                     </div>
@@ -322,7 +322,7 @@
                                 حداکثر ۱۰ مگابایت.
                                 @if($submission?->file_path)
                                     <br>فایل فعلی:
-                                    <a href="{{ Storage::disk('public')->url($submission->file_path) }}" target="_blank">دانلود</a>
+                                    <a href="{{ URL::temporarySignedRoute('files.download', now()->addMinutes(60), ['path' => $submission->file_path]) }}" target="_blank">دانلود</a>
                                     (با آپلود فایل جدید جایگزین می‌شود)
                                 @endif
                             </small>

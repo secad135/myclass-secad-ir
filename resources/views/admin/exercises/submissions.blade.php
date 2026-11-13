@@ -187,7 +187,7 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
                                     @endif
                                     @if($sub->file_path)
                                         <p>
-                                            <a href="{{ Storage::disk('public')->url($sub->file_path) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                            <a href="{{ URL::temporarySignedRoute('files.download', now()->addMinutes(60), ['path' => $sub->file_path]) }}" target="_blank" class="btn btn-sm btn-outline-primary">
                                                 📎 دانلود فایل پاسخ
                                             </a>
                                         </p>

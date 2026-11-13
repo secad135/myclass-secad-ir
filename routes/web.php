@@ -21,6 +21,11 @@ Route::get('/', function () {
 
 Route::view('/help', 'help')->name('help');
 
+Route::get('files/{path}', \App\Http\Controllers\FileDownloadController::class)
+    ->where('path', '.*')
+    ->middleware('signed')
+    ->name('files.download');
+
 Route::middleware('auth')->get('/dashboard', function () {
     $user = auth()->user();
 

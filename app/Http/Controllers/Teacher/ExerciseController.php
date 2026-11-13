@@ -2,15 +2,20 @@
 
 namespace App\Http\Controllers\Teacher;
 
+use App\Exceptions\UploadRejectedException;
 use App\Models\ClassSubject;
 use App\Models\Exercise;
 use App\Models\ExerciseSubmission;
 use App\Services\ActivityLogger;
+use App\Services\Uploads\UploadService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 
 class ExerciseController extends BaseController
 {
+    public function __construct(private readonly UploadService $uploads)
+    {
+    }
+
     public function index()
     {
         $classSubjectIds = $this->ownClassSubjectIds();
@@ -37,7 +42,12 @@ class ExerciseController extends BaseController
 
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
-            $attachmentPath = $request->file('attachment')->store('exercise-attachments', 'public');
+            try {
+                $attachmentPath = $this->uploads
+                    ->store($request->file('attachment'), 'exercise_attachment', 'exercise-attachments')['path'];
+            } catch (UploadRejectedException $e) {
+                return back()->withInput()->withErrors(['attachment' => $e->getMessage()]);
+            }
         }
 
         Exercise::create([
@@ -77,10 +87,15 @@ class ExerciseController extends BaseController
 
         $attachmentPath = $exercise->attachment_path;
         if ($request->hasFile('attachment')) {
-            if ($attachmentPath) {
-                Storage::disk('public')->delete($attachmentPath);
+            try {
+                $newPath = $this->uploads
+                    ->store($request->file('attachment'), 'exercise_attachment', 'exercise-attachments')['path'];
+            } catch (UploadRejectedException $e) {
+                return back()->withInput()->withErrors(['attachment' => $e->getMessage()]);
             }
-            $attachmentPath = $request->file('attachment')->store('exercise-attachments', 'public');
+
+            $this->uploads->delete($attachmentPath);
+            $attachmentPath = $newPath;
         }
 
         $exercise->update([
@@ -106,9 +121,7 @@ class ExerciseController extends BaseController
     {
         $this->assertOwnsExercise($exercise);
 
-        if ($exercise->attachment_path) {
-            Storage::disk('public')->delete($exercise->attachment_path);
-        }
+        $this->uploads->delete($exercise->attachment_path);
         $title = $exercise->title;
         $exercise->delete();
 
