@@ -375,6 +375,10 @@ class StudentReportService
                 'attempts_count' => $attempts->count(),
                 'best_attempt'   => $attempts->first(),
                 'participated'   => $attempts->count() > 0,
+                'missed'         => $attempts->isEmpty() && $exam->hasEnded(),
+                'display_score'  => $attempts->isNotEmpty()
+                    ? $attempts->first()->final_score
+                    : ($exam->hasEnded() ? 0 : null),
             ];
         });
     }
@@ -432,7 +436,7 @@ class StudentReportService
 
             // نتایج آزمون‌های این درس
             $examRows = $this->getExamResultsForStudent($student, [$cs->id]);
-            $bestScores = $examRows->map(fn($r) => $r['best_attempt']?->final_score)->filter();
+            $bestScores = $examRows->map(fn($r) => $r['display_score'])->filter(fn($score) => $score !== null);
             $avgExam    = $bestScores->isNotEmpty() ? round($bestScores->avg(), 1) : null;
             $examsTaken = $examRows->where('participated', true)->count();
             $examsTotal = $examRows->count();
@@ -500,6 +504,10 @@ class StudentReportService
                 'max_score'   => $exercise->max_score,
                 'is_late'     => $submission?->is_late ?? false,
                 'submitted_at'=> $submission?->submitted_at,
+                'missed'      => $submission === null && $exercise->isMissed(),
+                'display_score' => $submission === null
+                    ? ($exercise->isMissed() ? 0 : null)
+                    : ($submission->isGraded() ? $submission->score : null),
             ];
         });
     }

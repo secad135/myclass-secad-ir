@@ -326,10 +326,13 @@ $layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'la
                         @endif
                     </td>
                     <td class="text-center">
-                        @if($best)
-                        <span class="badge bg-{{ $best->final_score >= 17 ? 'success' : ($best->final_score >= 10 ? 'warning text-dark' : 'danger') }}" style="font-size: 0.95rem;">
-                            {{ $best->final_score }} / 20
+                        @if($row['display_score'] !== null)
+                        <span class="badge bg-{{ $row['display_score'] >= 17 ? 'success' : ($row['display_score'] >= 10 ? 'warning text-dark' : 'danger') }}" style="font-size: 0.95rem;">
+                            {{ $row['display_score'] }} / 20
                         </span>
+                        @if($row['missed'])
+                        <br><small class="text-danger">عدم شرکت</small>
+                        @endif
                         @else
                         <span class="text-muted">—</span>
                         @endif
@@ -403,14 +406,17 @@ $layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'la
                         @endif
                     </td>
                     <td class="text-center">
-                        @if($row['is_graded'])
+                        @if($row['display_score'] !== null)
                         @php
-                        $pct = $row['max_score'] > 0 ? ($row['score'] / $row['max_score']) * 100 : 0;
+                        $pct = $row['max_score'] > 0 ? ($row['display_score'] / $row['max_score']) * 100 : 0;
                         $color = $pct >= 85 ? 'success' : ($pct >= 50 ? 'warning text-dark' : 'danger');
                         @endphp
                         <span class="badge bg-{{ $color }}" style="font-size: 0.95rem;">
-                            {{ $row['score'] }} / {{ $row['max_score'] }}
+                            {{ $row['display_score'] }} / {{ $row['max_score'] }}
                         </span>
+                        @if($row['missed'])
+                        <br><small class="text-danger">عدم شرکت</small>
+                        @endif
                         @else
                         <span class="text-muted">—</span>
                         @endif
@@ -424,7 +430,9 @@ $layout = $isTeacher ? 'layouts.teacher' : ($isManager ? 'layouts.manager' : 'la
                     </td>
                     <td class="text-center">
                         @if(!$row['submitted'])
-                        <span class="badge bg-secondary">ارسال نشده</span>
+                        <span class="badge bg-{{ $row['missed'] ? 'danger' : 'secondary' }}">
+                            {{ $row['missed'] ? 'عدم شرکت' : 'ارسال نشده' }}
+                        </span>
                         @elseif($row['is_graded'])
                         <span class="badge bg-success">تصحیح شده</span>
                         @else

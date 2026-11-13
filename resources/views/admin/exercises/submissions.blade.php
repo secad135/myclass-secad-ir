@@ -143,12 +143,17 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
         </thead>
         <tbody>
             @forelse($students as $student)
-                @php $sub = $submissions->get($student->id); @endphp
+                @php
+                    $sub = $submissions->get($student->id);
+                    $missed = !$sub && $exercise->isMissed();
+                @endphp
                 <tr>
                     <td><strong>{{ $student->name }}</strong></td>
                     <td class="text-center">
                         @if(!$sub)
-                            <span class="badge bg-secondary">ارسال نشده</span>
+                            <span class="badge bg-{{ $missed ? 'danger' : 'secondary' }}">
+                                {{ $missed ? 'عدم شرکت' : 'ارسال نشده' }}
+                            </span>
                         @elseif($sub->isGraded())
                             <span class="badge bg-success">تصحیح شده</span>
                         @else
@@ -164,6 +169,8 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
                     <td class="text-center">
                         @if($sub && $sub->isGraded())
                             <span class="badge bg-primary">{{ $sub->score }} / {{ $exercise->max_score }}</span>
+                        @elseif($missed)
+                            <span class="badge bg-danger">0 / {{ $exercise->max_score }}</span>
                         @else
                             <span class="text-muted">—</span>
                         @endif

@@ -742,10 +742,13 @@
                                     {{ $exam->start_at ? jdate($exam->start_at, 'yy/MM/dd') : '—' }}
                                 </td>
                                 <td class="text-center">
-                                    @if($best)
-                                        <span class="badge bg-{{ $best->final_score >= 17 ? 'success' : ($best->final_score >= 10 ? 'warning text-dark' : 'danger') }}">
-                                            {{ $best->final_score }} / 20
+                                    @if($row['display_score'] !== null)
+                                        <span class="badge bg-{{ $row['display_score'] >= 17 ? 'success' : ($row['display_score'] >= 10 ? 'warning text-dark' : 'danger') }}">
+                                            {{ $row['display_score'] }} / 20
                                         </span>
+                                        @if($row['missed'])
+                                            <br><small class="text-danger">عدم شرکت</small>
+                                        @endif
                                     @else
                                         <span class="text-muted">—</span>
                                     @endif
@@ -843,10 +846,13 @@
                                         {{ $exercise->deadline_at ? jdate($exercise->deadline_at, 'yy/MM/dd') : '—' }}
                                     </td>
                                     <td class="text-center">
-                                        @if($isGraded)
+                                        @if($row['display_score'] !== null)
                                             <span class="badge bg-{{ $scoreColor }}">
-                                                {{ $row['score'] }} / {{ $row['max_score'] }}
+                                                {{ $row['display_score'] }} / {{ $row['max_score'] }}
                                             </span>
+                                            @if($row['missed'])
+                                                <br><small class="text-danger">عدم شرکت</small>
+                                            @endif
                                         @elseif($isSubmitted)
                                             <span class="badge bg-warning text-dark">در انتظار</span>
                                         @else

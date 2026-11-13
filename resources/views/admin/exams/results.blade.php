@@ -84,10 +84,13 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
                                 {{ $row['attempted'] }} / {{ $exam->max_attempts }}
                             </td>
                             <td class="text-center">
-                                @if($row['best_score'] !== null)
-                                    <span class="badge bg-{{ $row['best_score'] >= 17 ? 'success' : ($row['best_score'] >= 10 ? 'warning text-dark' : 'danger') }}" style="font-size: 0.95rem;">
-                                        {{ $row['best_score'] }} / 20
+                                @if($row['display_score'] !== null)
+                                    <span class="badge bg-{{ $row['display_score'] >= 17 ? 'success' : ($row['display_score'] >= 10 ? 'warning text-dark' : 'danger') }}" style="font-size: 0.95rem;">
+                                        {{ $row['display_score'] }} / 20
                                     </span>
+                                    @if($row['missed'])
+                                        <br><small class="text-danger">عدم شرکت</small>
+                                    @endif
                                 @elseif($row['in_progress'] > 0)
                                     <span class="text-muted">—</span>
                                 @else

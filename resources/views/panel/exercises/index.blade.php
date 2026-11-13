@@ -100,7 +100,15 @@
 
                     <div class="text-end">
                         @if(!$sub)
-                            <span class="badge bg-secondary">ارسال نشده</span>
+                            @if($exercise->isMissed())
+                                <span class="badge bg-danger">عدم شرکت</span>
+                                <div class="mt-1">
+                                    <strong class="text-danger" style="font-size: 1.3rem;">0</strong>
+                                    <span class="text-muted">/ {{ $exercise->max_score }}</span>
+                                </div>
+                            @else
+                                <span class="badge bg-secondary">ارسال نشده</span>
+                            @endif
                         @elseif($sub->isGraded())
                             <span class="badge bg-success">تصحیح شده</span>
                             <div class="mt-1">

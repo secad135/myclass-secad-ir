@@ -49,6 +49,14 @@ class Exam extends Model
         return true;
     }
 
+    /**
+     * آیا مهلت آزمون تمام شده است؟ (برای نمایش نمره صفر در صورت عدم شرکت)
+     */
+    public function hasEnded(): bool
+    {
+        return $this->end_at !== null && now()->gt($this->end_at);
+    }
+
     public function statusLabel(): array
     {
         if (!$this->is_active) {

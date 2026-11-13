@@ -88,6 +88,13 @@
                     </div>
                 @endif
 
+                @if($doneCount === 0 && !$inProgress && $exam->hasEnded())
+                    <div class="alert alert-danger py-2 px-3 small mb-3">
+                        ⛔ مهلت این آزمون تمام شده و شما در آن شرکت نکرده‌اید — نمره ثبت‌شده:
+                        <strong>۰ از ۲۰</strong>
+                    </div>
+                @endif
+
                 <!-- اطلاعات تلاش‌ها -->
                 @if($doneCount > 0 || $inProgress)
                     <div class="bg-light rounded p-2 mb-3 small">

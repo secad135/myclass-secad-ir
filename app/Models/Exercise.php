@@ -48,6 +48,15 @@ class Exercise extends Model
         return $this->allow_late_submission;
     }
 
+    /**
+     * آیا مهلت گذشته و ارسال دیرهنگام هم مجاز نیست؟
+     * در این حالت دانش‌آموزی که پاسخ نداده، نمره صفر می‌گیرد.
+     */
+    public function isMissed(): bool
+    {
+        return $this->isExpired() && !$this->allow_late_submission;
+    }
+
     public function statusLabel(): array
     {
         if (!$this->is_active) {

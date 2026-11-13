@@ -354,6 +354,7 @@ class ExamService
             $best = $attempts->first();
             $attempted = $attempts->whereIn('status', ['submitted', 'expired'])->count();
             $inProgress = $attempts->where('status', 'in_progress')->count();
+            $missed = $attempted === 0 && $inProgress === 0 && $exam->hasEnded();
 
             return [
                 'student'      => $student,
@@ -361,6 +362,8 @@ class ExamService
                 'attempted'    => $attempted,
                 'in_progress'  => $inProgress,
                 'best_score'   => $best?->final_score ?? null,
+                'missed'       => $missed,
+                'display_score' => $best?->final_score ?? ($missed ? 0 : null),
                 'best_attempt' => $best,
                 'last_attempt' => $attempts->sortByDesc('finished_at')->first(),
             ];
