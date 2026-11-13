@@ -2,7 +2,7 @@
 
 > این فایل مرجع اصلی کار است. اگر جلسه قطع شد یا توکن تمام شد، از همین فایل ادامه بده.
 > شاخه کاری: `feature/teacher-role` (از `main`)
-> وضعیت کلی: **فاز ۰، ۱ و ۲ تکمیل شد؛ آماده شروع فاز ۳ (سخت‌سازی، SQL هاست، merge).**
+> وضعیت کلی: **فاز ۰، ۱، ۲ و ۳ (بخش کد و تست) تکمیل شد؛ فقط merge به `main` پس از تأیید کاربر و سپس استقرار هاست باقی مانده است.**
 
 ---
 
@@ -136,7 +136,12 @@ ALTER TABLE `exercises`
     FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE SET NULL;
 ```
 
-فایل آماده: `database/sql/teacher_role_migration.sql` (در فاز ۳ ساخته می‌شود).
+فایل آماده: `database/sql/teacher_role_migration.sql`
+
+> این فایل علاوه بر سه ستون نقش معلم، تغییرات **سخت‌سازی آزمون** (کامیت `0ebccbc`) را هم پوشش می‌دهد:
+> `exam_attempt_answers.correct_option_id`، `exam_attempt_answers.first_answered_at/last_answered_at`،
+> `exam_attempts.session_id/ip_address/user_agent` و جدول `exam_events` + پر کردن snapshot پاسخ صحیح.
+> فایل idempotent است (با procedure و `information_schema`) و اجرای دوباره خطا نمی‌دهد.
 
 ---
 
@@ -351,21 +356,29 @@ ALTER TABLE `exercises`
 
 ## ۸. فاز ۳ — امنیت، تست نهایی، استقرار
 
-- [ ] بازبینی تمام routeهای `/teacher` برای مالکیت
-- [ ] تست دسترسی مستقیم با ID کلاس/درس/دانش‌آموز/آزمون/تمرین دیگران → 403
-- [ ] تست معلم برای `/admin` و `/manager` → 403
-- [ ] تست ادمین و ناظر و دانش‌آموز (بدون regression)
-- [ ] `php -l` روی همه فایل‌های PHP تغییر‌یافته
-- [ ] `php artisan route:list --name=teacher`
-- [ ] `php artisan view:cache` و رندر همه صفحات معلم
-- [ ] `git diff --check`
-- [ ] ساخت `database/sql/teacher_role_migration.sql`
-- [ ] به‌روزرسانی `TEACHER_ROLE_PLAN.md` در ریشه پروژه
+- [x] بازبینی تمام routeهای `/teacher` برای مالکیت
+- [x] تست دسترسی مستقیم با ID کلاس/درس/دانش‌آموز/آزمون/تمرین دیگران → 403
+- [x] تست معلم برای `/admin` و `/manager` → 403
+- [x] تست ادمین و ناظر و دانش‌آموز (بدون regression)
+- [x] `php -l` روی همه فایل‌های PHP تغییر‌یافته
+- [x] `php artisan route:list --name=teacher`
+- [x] `php artisan view:cache` و رندر همه صفحات معلم
+- [x] `git diff --check`
+- [x] ساخت `database/sql/teacher_role_migration.sql`
+- [x] به‌روزرسانی `TEACHER_ROLE_PLAN.md` در ریشه پروژه
 - [ ] merge به `main` بعد از تأیید کاربر + push
 - [ ] استقرار هاست طبق بخش ۱۱
 - [ ] تست پس از استقرار
 
 **commit نهایی:** `test(teacher): harden access and add deployment notes`
+
+### نتیجه تست‌های فاز ۳
+
+- ۲۳ سناریوی دسترسی با tinker اجرا شد؛ همه PASS.
+- معلم A: کلاس/دانش‌آموز/حضور/آزمون/تمرین/مبحث/سوال معلم B → 403.
+- معلم → `/admin` و `/manager` → 403؛ ادمین/ناظر/دانش‌آموز بدون regression.
+- ریدایرکت اجباری تغییر رمز معلم → `teacher.profile` (302) و عبور از پروفایل (200).
+- رندر صفحات معلم (داشبورد، پروفایل، کلاس‌ها، دانش‌آموزان، آزمون‌ها، تمرین‌ها، مباحث، سوالات) بدون خطا.
 
 ---
 
@@ -425,12 +438,15 @@ ALTER TABLE `exercises`
 ## ۱۱. استقرار روی هاست (بدون ترمینال)
 
 1. **Backup** کامل دیتابیس از cPanel.
-2. در phpMyAdmin، SQL بخش ۳ را اجرا کن (فقط بخش‌هایی که ستون وجود ندارد).
-3. تأیید ستون‌ها:
+2. در phpMyAdmin، فایل `database/sql/teacher_role_migration.sql` را کامل اجرا کن (idempotent است؛ بخش‌های موجود را رد می‌کند).
+3. تأیید ستون‌ها (خروجی انتهای همان SQL):
    ```sql
    SHOW COLUMNS FROM class_subjects LIKE 'teacher_id';
    SHOW COLUMNS FROM exams LIKE 'created_by';
    SHOW COLUMNS FROM exercises LIKE 'created_by';
+   SHOW COLUMNS FROM exam_attempt_answers LIKE 'correct_option_id';
+   SHOW COLUMNS FROM exam_attempts LIKE 'session_id';
+   SHOW TABLES LIKE 'exam_events';
    ```
 4. بعد از merge به `main`، در cPanel → Git Version Control → **Pull**.
 5. در File Manager این دو پوشه را خالی کن (فایل‌ها را پاک کن، خود پوشه نه):
@@ -481,8 +497,8 @@ ALTER TABLE `exercises`
 | مباحث و بانک سوالات معلم | ✅ | `2b407ce` | CRUD محدود به دروس/مباحث خود معلم + import گروهی |
 | گزارش‌های معلم | ✅ | `b208a92` | گزارش کلاس/کامل فقط برای کلاس‌های معلم + سرویس مشترک ClassReportService |
 | لاگ فعالیت معلم | ✅ | `8ae0d03` | ثبت لاگ معلم + فیلتر ویجت ادمین به دانش‌آموزان |
-| تست نهایی و امنیت | ⬜ | - | |
-| SQL هاست + استقرار | ⬜ | - | |
+| تست نهایی و امنیت | ✅ | `test(teacher): harden access and add deployment notes` | ۲۳ سناریوی 403/200 + middleware + ریدایرکت رمز + رندر صفحات |
+| SQL هاست + استقرار | ⬜ | - | فایل `database/sql/teacher_role_migration.sql` آماده است |
 | merge به main | ⬜ | - | فقط بعد از تأیید |
 
 ---
