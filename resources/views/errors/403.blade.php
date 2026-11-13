@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>عدم دسترسی (403) — MyClass</title>
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}?v={{ filemtime(public_path('css/vazir.css')) }}" rel="stylesheet">
     <style>
         body { background: #f4f6f9; font-family: 'Vazir', Tahoma, Arial, sans-serif; min-height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0; padding: 20px; }
         .error-card { background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 40px 30px; text-align: center; max-width: 500px; width: 100%; border-top: 5px solid #dc3545; }

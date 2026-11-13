@@ -6,7 +6,7 @@
     <title>راهنمای ورود به سامانه — myclass</title>
     <!-- استفاده از فایل بوت‌استرپ لوکال که قبلاً دانلود کردیم -->
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}?v={{ filemtime(public_path('css/vazir.css')) }}" rel="stylesheet">
     <style>
         body {
             background: #f4f6f9;

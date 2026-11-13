@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <title>گزارش کامل — {{ $class->name }}</title>
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}?v={{ filemtime(public_path('css/vazir.css')) }}" rel="stylesheet">
     <style>
         /* ---------- استایل عمومی ---------- */
         .report-container {

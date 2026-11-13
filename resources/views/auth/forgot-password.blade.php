@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>فراموشی رمز عبور — MyClass</title>
     <link href="{{ asset('css/bootstrap.rtl.min.css') }}" rel="stylesheet">
-    <link href="{{ asset('css/vazir.css') }}" rel="stylesheet">
+    <link href="{{ asset('css/vazir.css') }}?v={{ filemtime(public_path('css/vazir.css')) }}" rel="stylesheet">
     <style>
         body {
             background: #f4f6f9;
