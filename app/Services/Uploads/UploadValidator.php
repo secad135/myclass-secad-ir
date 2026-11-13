@@ -60,13 +60,31 @@ class UploadValidator
      * document. Plain text/code files are exempt because they are served as
      * text/plain and cannot execute.
      */
+    /**
+     * Strong markers safe to search in the whole binary file. They are long
+     * enough that random compressed image data will not contain them.
+     */
     private const EMBEDDED_PAYLOAD_MARKERS = [
-        '<?php', '<?=', '<script', '<html', '<iframe', '<svg', '<%', '#!/bin/',
+        '<?php', '<script', '<html', '<iframe', '#!/bin/',
     ];
 
-    private const PDF_ACTIVE_CONTENT = [
-        '/JavaScript', '/JS', '/Launch', '/EmbeddedFile', '/OpenAction',
-        '/RichMedia', '/XFA',
+    /**
+     * Short markers are only searched in image metadata and in bytes appended
+     * after the image end. Searching them in compressed pixels produces false
+     * positives ("<%" alone appears hundreds of times in a normal photo).
+     */
+    private const SHORT_PAYLOAD_MARKERS = [
+        '<?php', '<?=', '<script', '<svg',
+    ];
+
+    private const PDF_ACTIVE_CONTENT_PATTERNS = [
+        '/\/JavaScript\b/i',
+        '/\/JS\s*[\(<\[\/]/i',
+        '/\/Launch\b/i',
+        '/\/EmbeddedFile\b/i',
+        '/\/OpenAction\b/i',
+        '/\/RichMedia\b/i',
+        '/\/XFA\b/i',
     ];
 
     private const RTF_ACTIVE_CONTENT = ['\objupdate', '\objdata', '\object'];
@@ -250,6 +268,234 @@ class UploadValidator
         if ($this->streamContainsAny($path, self::EMBEDDED_PAYLOAD_MARKERS)) {
             throw new UploadRejectedException('تصویر حاوی کد اجرایی جاسازی‌شده است.');
         }
+
+        $metadata = $this->imageMetadata($path, $extension);
+        if ($metadata !== '' && $this->containsAny($metadata, self::SHORT_PAYLOAD_MARKERS)) {
+            throw new UploadRejectedException('متادیتای تصویر حاوی کد اجرایی جاسازی‌شده است.');
+        }
+
+        $trailing = $this->imageTrailingBytes($path, $extension);
+        if ($trailing !== '' && $this->containsAny($trailing, self::SHORT_PAYLOAD_MARKERS)) {
+            throw new UploadRejectedException('تصویر حاوی کد اجرایی جاسازی‌شده است.');
+        }
+    }
+
+    private function containsAny(string $haystack, array $needles): bool
+    {
+        foreach ($needles as $needle) {
+            if (str_contains($haystack, $needle)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function imageMetadata(string $path, string $extension): string
+    {
+        return match ($extension) {
+            'jpg', 'jpeg' => $this->jpegMetadata($path),
+            'png'         => $this->pngMetadata($path),
+            'webp'        => $this->webpMetadata($path),
+            default       => '',
+        };
+    }
+
+    private function jpegMetadata(string $path): string
+    {
+        $handle = fopen($path, 'rb');
+
+        if (!$handle) {
+            return '';
+        }
+
+        $blob = '';
+
+        try {
+            fread($handle, 2); // SOI
+
+            while (!feof($handle)) {
+                $prefix = fread($handle, 1);
+
+                if ($prefix !== "\xFF") {
+                    break;
+                }
+
+                $marker = fread($handle, 1);
+
+                while ($marker === "\xFF") {
+                    $marker = fread($handle, 1);
+                }
+
+                if ($marker === '') {
+                    break;
+                }
+
+                $code = ord($marker);
+
+                // EOI or start of scan: compressed pixel data begins here.
+                if ($code === 0xD9 || $code === 0xDA) {
+                    break;
+                }
+
+                if ($code === 0xD8) {
+                    continue;
+                }
+
+                $lengthBytes = fread($handle, 2);
+
+                if (strlen($lengthBytes) < 2) {
+                    break;
+                }
+
+                $length = unpack('n', $lengthBytes)[1];
+
+                if ($length < 2) {
+                    break;
+                }
+
+                $data = $length > 2 ? (string) fread($handle, $length - 2) : '';
+
+                if (($code >= 0xE0 && $code <= 0xEF) || $code === 0xFE) {
+                    $blob .= $data;
+                }
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $blob;
+    }
+
+    private function pngMetadata(string $path): string
+    {
+        $handle = fopen($path, 'rb');
+
+        if (!$handle) {
+            return '';
+        }
+
+        $blob = '';
+
+        try {
+            fread($handle, 8); // signature
+
+            while (!feof($handle)) {
+                $header = fread($handle, 8);
+
+                if (strlen($header) < 8) {
+                    break;
+                }
+
+                $length = unpack('N', substr($header, 0, 4))[1];
+                $type = substr($header, 4, 4);
+
+                if ($length > 10_000_000) {
+                    break;
+                }
+
+                $data = $length > 0 ? (string) fread($handle, $length) : '';
+                fread($handle, 4); // CRC
+
+                if (in_array($type, ['tEXt', 'iTXt', 'zTXt', 'eXIf', 'iCCP'], true)) {
+                    $blob .= $data;
+                }
+
+                if ($type === 'IEND') {
+                    break;
+                }
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $blob;
+    }
+
+    private function webpMetadata(string $path): string
+    {
+        $handle = fopen($path, 'rb');
+
+        if (!$handle) {
+            return '';
+        }
+
+        $blob = '';
+
+        try {
+            if (strlen((string) fread($handle, 12)) < 12) {
+                return '';
+            }
+
+            while (!feof($handle)) {
+                $chunk = fread($handle, 8);
+
+                if (strlen($chunk) < 8) {
+                    break;
+                }
+
+                $type = substr($chunk, 0, 4);
+                $length = unpack('V', substr($chunk, 4, 4))[1];
+
+                if ($length > 10_000_000) {
+                    break;
+                }
+
+                $data = $length > 0 ? (string) fread($handle, $length) : '';
+
+                if ($length % 2 === 1) {
+                    fread($handle, 1);
+                }
+
+                if (in_array($type, ['EXIF', 'XMP '], true)) {
+                    $blob .= $data;
+                }
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return $blob;
+    }
+
+    private function imageTrailingBytes(string $path, string $extension): string
+    {
+        $contents = @file_get_contents($path);
+
+        if ($contents === false) {
+            return '';
+        }
+
+        return match ($extension) {
+            'jpg', 'jpeg' => $this->afterLast($contents, "\xFF\xD9"),
+            'png'         => $this->afterLast($contents, 'IEND', 4),
+            'gif'         => '',
+            'webp'        => $this->webpTrailingBytes($contents),
+            default       => '',
+        };
+    }
+
+    private function afterLast(string $contents, string $needle, int $skip = 0): string
+    {
+        $position = strrpos($contents, $needle);
+
+        if ($position === false) {
+            return '';
+        }
+
+        return substr($contents, $position + strlen($needle) + $skip);
+    }
+
+    private function webpTrailingBytes(string $contents): string
+    {
+        if (strlen($contents) < 12) {
+            return '';
+        }
+
+        $size = unpack('V', substr($contents, 4, 4))[1];
+        $end = 8 + $size;
+
+        return strlen($contents) > $end ? substr($contents, $end) : '';
     }
 
     private function inspectPdf(string $path): void
@@ -267,7 +513,7 @@ class UploadValidator
         }
 
         if (config('uploads.pdf_block_active_content', true)
-            && $this->streamContainsAny($path, self::PDF_ACTIVE_CONTENT)) {
+            && $this->streamMatchesAny($path, self::PDF_ACTIVE_CONTENT_PATTERNS)) {
             throw new UploadRejectedException('PDF حاوی محتوای فعال یا اسکریپت است و پذیرفته نمی‌شود.');
         }
     }
@@ -409,6 +655,46 @@ class UploadValidator
                 }
 
                 $tail = substr($buffer, -$overlap);
+            }
+        } finally {
+            fclose($handle);
+        }
+
+        return false;
+    }
+
+    /**
+     * Scan a file in chunks with regular expressions.
+     */
+    private function streamMatchesAny(string $path, array $patterns, int $maxBytes = 20 * 1024 * 1024): bool
+    {
+        $handle = fopen($path, 'rb');
+
+        if (!$handle) {
+            throw new UploadRejectedException('فایل قابل خواندن نیست.');
+        }
+
+        $tail = '';
+        $read = 0;
+
+        try {
+            while (!feof($handle) && $read < $maxBytes) {
+                $chunk = (string) fread($handle, 1024 * 1024);
+
+                if ($chunk === '') {
+                    break;
+                }
+
+                $read += strlen($chunk);
+                $buffer = $tail . $chunk;
+
+                foreach ($patterns as $pattern) {
+                    if (preg_match($pattern, $buffer) === 1) {
+                        return true;
+                    }
+                }
+
+                $tail = substr($buffer, -64);
             }
         } finally {
             fclose($handle);

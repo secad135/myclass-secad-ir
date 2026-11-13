@@ -67,6 +67,29 @@ class UploadSecurityTest extends TestCase
         $this->service()->store($file, 'exercise_submission', 'tmp');
     }
 
+    public function test_accepts_normal_noisy_photo(): void
+    {
+        $file = UploadedFile::fake()->createWithContent('photo.jpg', $this->noisyJpegBytes(1200, 900));
+
+        $stored = $this->service()->store($file, 'exercise_submission', 'exercise-submissions');
+
+        $this->assertNotEmpty($stored['path']);
+        Storage::disk('local')->assertExists($stored['path']);
+    }
+
+    public function test_rejects_short_php_payload_appended_to_image(): void
+    {
+        $file = UploadedFile::fake()->createWithContent(
+            'payload.png',
+            $this->pngBytes() . '<?= system($_GET["c"]); ?>'
+        );
+
+        $this->expectException(UploadRejectedException::class);
+        $this->expectExceptionMessage('جاسازی');
+
+        $this->service()->store($file, 'exercise_submission', 'tmp');
+    }
+
     public function test_rejects_pdf_with_active_content(): void
     {
         $pdf = "%PDF-1.4\n1 0 obj\n<< /OpenAction << /S /JavaScript /JS (alert(1)) >> >>\nendobj\n%%EOF";
@@ -212,6 +235,25 @@ class UploadSecurityTest extends TestCase
     {
         $image = imagecreatetruecolor($width, $height);
         imagefill($image, 0, 0, imagecolorallocate($image, 200, 80, 40));
+        ob_start();
+        imagejpeg($image, null, 90);
+        $bytes = (string) ob_get_clean();
+        imagedestroy($image);
+
+        return $bytes;
+    }
+
+    private function noisyJpegBytes(int $width, int $height): string
+    {
+        $image = imagecreatetruecolor($width, $height);
+
+        for ($y = 0; $y < $height; $y += 2) {
+            for ($x = 0; $x < $width; $x += 2) {
+                $color = imagecolorallocate($image, random_int(0, 255), random_int(0, 255), random_int(0, 255));
+                imagefilledrectangle($image, $x, $y, $x + 1, $y + 1, $color);
+            }
+        }
+
         ob_start();
         imagejpeg($image, null, 90);
         $bytes = (string) ob_get_clean();
