@@ -115,6 +115,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // --- تمرین‌ها ---
     Route::get('exercises/{exercise}/submissions', [\App\Http\Controllers\Admin\ExerciseController::class, 'submissions'])->name('exercises.submissions');
+    Route::post('exercises/{exercise}/submissions', [\App\Http\Controllers\Admin\ExerciseController::class, 'storeSubmission'])->name('exercises.submissions.store');
     Route::post('exercises/{exercise}/submissions/{submission}/grade', [\App\Http\Controllers\Admin\ExerciseController::class, 'grade'])->name('exercises.grade');
 
     Route::resource('exercises', \App\Http\Controllers\Admin\ExerciseController::class);
@@ -196,6 +197,7 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         Route::put('exercises/{exercise}', [\App\Http\Controllers\Teacher\ExerciseController::class, 'update'])->name('exercises.update');
         Route::delete('exercises/{exercise}', [\App\Http\Controllers\Teacher\ExerciseController::class, 'destroy'])->name('exercises.destroy');
         Route::get('exercises/{exercise}/submissions', [\App\Http\Controllers\Teacher\ExerciseController::class, 'submissions'])->name('exercises.submissions');
+        Route::post('exercises/{exercise}/submissions', [\App\Http\Controllers\Teacher\ExerciseController::class, 'storeSubmission'])->name('exercises.submissions.store');
         Route::post('exercises/{exercise}/submissions/{submission}/grade', [\App\Http\Controllers\Teacher\ExerciseController::class, 'grade'])->name('exercises.grade');
 
         // مباحث معلم

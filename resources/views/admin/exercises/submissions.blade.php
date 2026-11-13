@@ -117,6 +117,20 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <table class="table table-bordered align-middle bg-white">
         <thead class="table-light">
             <tr>
@@ -158,6 +172,15 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
                         @if($sub)
                             <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#gradeModal{{ $sub->id }}">
                                 مشاهده و تصحیح
+                            </button>
+                            @unless($sub->isGraded())
+                                <button type="button" class="btn btn-sm btn-outline-secondary mt-1" data-bs-toggle="modal" data-bs-target="#recordModal{{ $student->id }}">
+                                    ویرایش پاسخ
+                                </button>
+                            @endunless
+                        @else
+                            <button type="button" class="btn btn-sm btn-outline-success" data-bs-toggle="modal" data-bs-target="#recordModal{{ $student->id }}">
+                                ثبت پاسخ
                             </button>
                         @endif
                     </td>
@@ -214,6 +237,76 @@ $layout = $isTeacher ? 'layouts.teacher' : 'layouts.admin';
                         </div>
                     </div>
                 @endif
+
+                {{-- Modal ثبت یا ویرایش پاسخ دستی --}}
+                <div class="modal fade" id="recordModal{{ $student->id }}" tabindex="-1">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <form action="{{ route($panelPrefix . '.exercises.submissions.store', $exercise) }}" method="POST" enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" name="student_id" value="{{ $student->id }}">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        {{ $sub ? 'ویرایش پاسخ' : 'ثبت پاسخ' }} {{ $student->name }}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted small mb-3">
+                                        اگر دانش‌آموز پاسخ را در شاد یا بستر دیگری فرستاده، متن یا فایل آن را اینجا ثبت کنید.
+                                        بعد از ثبت می‌توانید نمره بدهید.
+                                    </p>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">متن پاسخ</label>
+                                        <textarea name="content" class="form-control" rows="5"
+                                                  placeholder="متن پاسخ ارسال‌شده در شاد...">{{ old('content', $sub?->content) }}</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">کد (اختیاری)</label>
+                                        <textarea name="code_content" class="form-control" rows="4" dir="ltr"
+                                                  placeholder="...">{{ old('code_content', $sub?->code_content) }}</textarea>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">فایل پاسخ (اختیاری)</label>
+                                        <input type="file" name="file" class="form-control">
+                                        <small class="text-muted">حداکثر ۱۰ مگابایت؛ فایل از نظر امنیتی بررسی می‌شود.</small>
+                                        @if($sub?->file_path)
+                                            <div class="mt-2">
+                                                <a href="{{ URL::temporarySignedRoute('files.download', now()->addMinutes(60), ['path' => $sub->file_path]) }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                                                    📎 فایل فعلی پاسخ
+                                                </a>
+                                            </div>
+                                        @endif
+                                    </div>
+
+                                    <div class="row g-2">
+                                        <div class="col-md-6">
+                                            <label class="form-label">تاریخ ارسال (شمسی، اختیاری)</label>
+                                            <input type="text" name="submitted_date" class="form-control"
+                                                   value="{{ old('submitted_date', $sub?->submitted_at ? jdate($sub->submitted_at) : '') }}"
+                                                   placeholder="1405/08/20" dir="ltr" data-jdp data-jdp-only-date autocomplete="off">
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label class="form-label">ساعت ارسال (اختیاری)</label>
+                                            <input type="time" name="submitted_time" class="form-control" dir="ltr"
+                                                   value="{{ old('submitted_time', $sub?->submitted_at ? $sub->submitted_at->format('H:i') : '') }}">
+                                        </div>
+                                    </div>
+                                    <small class="text-muted d-block mt-1">
+                                        اگر خالی بماند، زمان فعلی ثبت می‌شود و پاسخ به‌عنوان «تأخیر» علامت نمی‌خورد.
+                                    </small>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="submit" class="btn btn-success">ثبت پاسخ</button>
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             @empty
                 <tr><td colspan="5" class="text-center text-muted">هیچ دانش‌آموزی در این کلاس نیست.</td></tr>
             @endforelse

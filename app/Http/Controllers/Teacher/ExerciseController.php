@@ -143,6 +143,77 @@ class ExerciseController extends BaseController
         return view('admin.exercises.submissions', compact('exercise', 'students', 'submissions'));
     }
 
+    public function storeSubmission(Request $request, Exercise $exercise)
+    {
+        $this->assertOwnsExercise($exercise);
+
+        $exercise->loadMissing(['classSubject.schoolClass']);
+
+        $data = $request->validate([
+            'student_id'     => 'required|integer',
+            'content'        => 'nullable|string|max:10000',
+            'code_content'   => 'nullable|string|max:50000',
+            'file'           => 'nullable|file|max:10240',
+            'submitted_date' => 'nullable|string|max:20',
+            'submitted_time' => 'nullable|string|max:10',
+        ]);
+
+        $student = $exercise->classSubject->schoolClass->students()
+            ->whereKey($data['student_id'])
+            ->first();
+
+        abort_unless($student, 404);
+
+        if (!$request->filled('content') && !$request->filled('code_content') && !$request->hasFile('file')) {
+            return back()->with('error', 'متن پاسخ یا فایل پاسخ را وارد کنید.');
+        }
+
+        $existing = $exercise->submissions()->where('student_id', $student->id)->first();
+
+        if ($existing && $existing->isGraded()) {
+            return back()->with('error', 'پاسخ این دانش‌آموز قبلاً تصحیح شده و قابل ویرایش نیست.');
+        }
+
+        $submittedAt = $this->resolveSubmittedAt($request);
+        $isLate = $request->filled('submitted_date')
+            && $exercise->deadline_at
+            && $submittedAt->gt($exercise->deadline_at);
+
+        $filePath = $existing?->file_path;
+
+        if ($request->hasFile('file')) {
+            try {
+                $newPath = $this->uploads
+                    ->store($request->file('file'), 'exercise_submission', 'exercise-submissions')['path'];
+            } catch (UploadRejectedException $e) {
+                return back()->with('error', $e->getMessage());
+            }
+
+            $this->uploads->delete($filePath);
+            $filePath = $newPath;
+        }
+
+        $exercise->submissions()->updateOrCreate(
+            ['student_id' => $student->id],
+            [
+                'content'      => $request->content,
+                'code_content' => $request->code_content,
+                'file_path'    => $filePath,
+                'submitted_at' => $submittedAt,
+                'is_late'      => $isLate,
+            ]
+        );
+
+        ActivityLogger::log(
+            auth()->user(),
+            'exercise_submission_recorded',
+            'پاسخ ' . $student->name . ' در تمرین «' . $exercise->title . '» را به‌صورت دستی ثبت کرد.'
+        );
+
+        return redirect()->route('teacher.exercises.submissions', $exercise)
+            ->with('success', 'پاسخ دانش‌آموز ثبت شد. اکنون می‌توانید نمره بدهید.');
+    }
+
     public function grade(Request $request, Exercise $exercise, ExerciseSubmission $submission)
     {
         $this->assertOwnsExercise($exercise);
@@ -216,5 +287,25 @@ class ExerciseController extends BaseController
         $g = to_gregorian($jalaliDate);
 
         return $g ? $g . ' ' . $time . ':00' : null;
+    }
+
+    private function resolveSubmittedAt(Request $request): \Illuminate\Support\Carbon
+    {
+        $date = $request->input('submitted_date');
+        $time = $request->input('submitted_time');
+
+        if ($date) {
+            $gregorian = to_gregorian($date);
+
+            if ($gregorian) {
+                return \Illuminate\Support\Carbon::parse($gregorian . ' ' . ($time ?: '00:00') . ':00');
+            }
+        }
+
+        if ($time) {
+            return now()->setTimeFromTimeString($time);
+        }
+
+        return now();
     }
 }
