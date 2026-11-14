@@ -340,6 +340,62 @@ class RankingTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_admin_can_manage_teacher_ranking_weights(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر',
+            'email' => 'admin@example.com',
+            'password' => 'secret',
+            'is_admin' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.ranking-weights.index'))
+            ->assertOk()
+            ->assertSee('وزن مؤلفه‌های نمره رتبه')
+            ->assertSee($this->teacher->name);
+
+        $this->actingAs($admin)
+            ->get(route('admin.ranking-weights.show', $this->teacher))
+            ->assertOk()
+            ->assertSee('وزن‌های رتبه‌بندی');
+
+        $this->actingAs($admin)
+            ->put(route('admin.ranking-weights.update', [$this->teacher, 'exams']), [
+                'weight' => 55,
+            ])
+            ->assertRedirect(route('admin.ranking-weights.show', $this->teacher));
+
+        $this->assertDatabaseHas('ranking_weights', [
+            'teacher_id' => $this->teacher->id,
+            'component' => 'exams',
+            'weight' => 55,
+        ]);
+
+        $this->actingAs($admin)
+            ->delete(route('admin.ranking-weights.destroy', [$this->teacher, 'exams']))
+            ->assertRedirect(route('admin.ranking-weights.show', $this->teacher));
+
+        $this->assertDatabaseMissing('ranking_weights', [
+            'teacher_id' => $this->teacher->id,
+            'component' => 'exams',
+        ]);
+    }
+
+    public function test_admin_cannot_manage_weights_for_non_teacher(): void
+    {
+        $admin = User::create([
+            'name' => 'مدیر',
+            'email' => 'admin2@example.com',
+            'password' => 'secret',
+            'is_admin' => true,
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.ranking-weights.show', $this->ali))
+            ->assertNotFound();
+    }
+
     private function rank(string $from = '2026-01-01', string $to = '2026-12-31', ?int $teacherId = null): Collection
     {
         return app(RankingService::class)

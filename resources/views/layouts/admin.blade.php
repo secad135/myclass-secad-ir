@@ -481,7 +481,7 @@
             'basic' => request()->routeIs('admin.schools.*', 'admin.academic-years.*', 'admin.grades.*', 'admin.subjects.*', 'admin.topics.*', 'admin.questions.*'),
             'people' => request()->routeIs('admin.classes.*', 'admin.students.*', 'admin.teachers.*', 'admin.managers.*'),
             'tasks' => request()->routeIs('admin.exams.*', 'admin.exercises.*'),
-            'reports' => request()->routeIs('admin.point-categories.*', 'admin.login-logs.*'),
+            'reports' => request()->routeIs('admin.point-categories.*', 'admin.login-logs.*', 'admin.ranking-weights.*'),
             ];
             @endphp
 
@@ -543,6 +543,7 @@
             </a>
             <div class="collapse {{ $activeGroups['reports'] ? 'show' : '' }}" id="group-reports">
                 <a href="{{ route('admin.point-categories.index') }}" class="sub-link {{ request()->routeIs('admin.point-categories.*') ? 'active' : '' }}">⭐ دسته‌های امتیاز</a>
+                <a href="{{ route('admin.ranking-weights.index') }}" class="sub-link {{ request()->routeIs('admin.ranking-weights.*') ? 'active' : '' }}">⚖️ وزن‌های رتبه‌بندی</a>
                 <a href="{{ route('admin.login-logs.index') }}" class="sub-link {{ request()->routeIs('admin.login-logs.*') ? 'active' : '' }}">🔐 لاگ ورود کاربران</a>
             </div>
 

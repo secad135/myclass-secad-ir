@@ -127,6 +127,12 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // --- مسئولان مدرسه ---
     Route::post('managers/{manager}/reset-password', [\App\Http\Controllers\Admin\ManagerController::class, 'resetPassword'])->name('managers.reset-password');
     Route::resource('managers', \App\Http\Controllers\Admin\ManagerController::class);
+
+    // --- وزن مؤلفه‌های نمره رتبه ---
+    Route::get('ranking-weights', [\App\Http\Controllers\Admin\RankingWeightController::class, 'index'])->name('ranking-weights.index');
+    Route::get('ranking-weights/{teacher}', [\App\Http\Controllers\Admin\RankingWeightController::class, 'show'])->name('ranking-weights.show');
+    Route::put('ranking-weights/{teacher}/{component}', [\App\Http\Controllers\Admin\RankingWeightController::class, 'update'])->name('ranking-weights.update');
+    Route::delete('ranking-weights/{teacher}/{component}', [\App\Http\Controllers\Admin\RankingWeightController::class, 'destroy'])->name('ranking-weights.destroy');
 });
 
 // ==================== پنل مسئول مدرسه ====================
