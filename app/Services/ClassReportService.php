@@ -15,7 +15,7 @@ class ClassReportService
         $this->reports = $reports ?? new StudentReportService();
     }
 
-    public function reportData(Request $request, SchoolClass $class, AcademicYear $currentYear): array
+    public function reportData(Request $request, SchoolClass $class, AcademicYear $currentYear, ?int $teacherId = null): array
     {
         $service = $this->reports;
 
@@ -35,10 +35,10 @@ class ClassReportService
             : null;
 
         $ranking = $selectedSubject
-            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate)
-            : $service->getClassRanking($class, $fromDate, $toDate);
+            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate, $teacherId)
+            : $service->getClassRanking($class, $fromDate, $toDate, $teacherId);
 
-        $summary          = $service->getClassSummary($class, $fromDate, $toDate);
+        $summary          = $service->getClassSummary($class, $fromDate, $toDate, $teacherId);
         $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
 
         $subjects = $classSubjects->pluck('subject.name')
@@ -61,7 +61,7 @@ class ClassReportService
         );
     }
 
-    public function fullReportData(Request $request, SchoolClass $class, AcademicYear $currentYear): array
+    public function fullReportData(Request $request, SchoolClass $class, AcademicYear $currentYear, ?int $teacherId = null): array
     {
         $service = $this->reports;
 
@@ -73,8 +73,8 @@ class ClassReportService
             $currentYear
         );
 
-        $ranking = $service->getClassRanking($class, $fromDate, $toDate);
-        $summary = $service->getClassSummary($class, $fromDate, $toDate);
+        $ranking = $service->getClassRanking($class, $fromDate, $toDate, $teacherId);
+        $summary = $service->getClassSummary($class, $fromDate, $toDate, $teacherId);
 
         $classSubjects    = $class->classSubjects()->with('subject')->get();
         $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);

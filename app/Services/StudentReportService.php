@@ -232,11 +232,11 @@ class StudentReportService
     /**
      * رتبه‌بندی دانش‌آموزان یک کلاس در بازه
      */
-    public function getClassRanking(SchoolClass $class, string $fromDate, string $toDate): Collection
+    public function getClassRanking(SchoolClass $class, string $fromDate, string $toDate, ?int $teacherId = null): Collection
     {
         $classSubjectIds = $class->classSubjects()->pluck('id')->toArray();
 
-        return app(RankingService::class)->rank($class, $classSubjectIds, $fromDate, $toDate);
+        return app(RankingService::class)->rank($class, $classSubjectIds, $fromDate, $toDate, $teacherId);
     }
 
     /**
@@ -246,9 +246,10 @@ class StudentReportService
         SchoolClass $class,
         ClassSubject $classSubject,
         string $fromDate,
-        string $toDate
+        string $toDate,
+        ?int $teacherId = null
     ): Collection {
-        return app(RankingService::class)->rank($class, [$classSubject->id], $fromDate, $toDate);
+        return app(RankingService::class)->rank($class, [$classSubject->id], $fromDate, $toDate, $teacherId);
     }
 
     /**
@@ -288,9 +289,9 @@ class StudentReportService
     /**
      * خلاصه آمار کلاس در بازه
      */
-    public function getClassSummary(SchoolClass $class, string $fromDate, string $toDate): array
+    public function getClassSummary(SchoolClass $class, string $fromDate, string $toDate, ?int $teacherId = null): array
     {
-        $ranking = $this->getClassRanking($class, $fromDate, $toDate);
+        $ranking = $this->getClassRanking($class, $fromDate, $toDate, $teacherId);
 
         if ($ranking->isEmpty()) {
             return [

@@ -55,7 +55,7 @@ class SchoolClassController extends BaseController
                 ->with('error', 'ابتدا مدیر باید یک سال تحصیلی «جاری» تعریف کند.');
         }
 
-        $data = (new ClassReportService())->reportData($request, $class, $currentYear);
+        $data = (new ClassReportService())->reportData($request, $class, $currentYear, $this->teacherId());
 
         return view('admin.classes.report', $data);
     }
@@ -70,7 +70,7 @@ class SchoolClassController extends BaseController
                 ->with('error', 'ابتدا مدیر باید یک سال تحصیلی «جاری» تعریف کند.');
         }
 
-        $data = (new ClassReportService())->fullReportData($request, $class, $currentYear);
+        $data = (new ClassReportService())->fullReportData($request, $class, $currentYear, $this->teacherId());
 
         return view('admin.classes.full-report', $data);
     }

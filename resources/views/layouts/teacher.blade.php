@@ -517,6 +517,12 @@
                     ❓ بانک سوالات
                 </a>
             @endif
+            @if(Route::has('teacher.ranking-weights.index'))
+                <a href="{{ route('teacher.ranking-weights.index') }}"
+                    class="nav-link {{ request()->routeIs('teacher.ranking-weights.*') ? 'active' : '' }}">
+                    ⚖️ وزن‌های رتبه‌بندی
+                </a>
+            @endif
 
             <div class="nav-section">حساب کاربری</div>
             <a href="{{ route('teacher.profile') }}"

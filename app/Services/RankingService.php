@@ -8,6 +8,7 @@ use App\Models\ExamAttempt;
 use App\Models\Exercise;
 use App\Models\ExerciseSubmission;
 use App\Models\PointEntry;
+use App\Models\RankingWeight;
 use App\Models\SchoolClass;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -20,7 +21,7 @@ class RankingService
      *
      * @param  array<int, int>  $classSubjectIds
      */
-    public function rank(SchoolClass $class, array $classSubjectIds, string $fromDate, string $toDate): Collection
+    public function rank(SchoolClass $class, array $classSubjectIds, string $fromDate, string $toDate, ?int $teacherId = null): Collection
     {
         if ($classSubjectIds === []) {
             return collect();
@@ -111,12 +112,7 @@ class RankingService
         $minPoints = (int) $rawPoints->min();
         $maxPoints = (int) $rawPoints->max();
         $neutralManualScore = (float) config('ranking.manual_points.neutral_score', 50);
-        $weights = config('ranking.weights', [
-            'exams' => 0.40,
-            'exercises' => 0.25,
-            'attendance' => 0.20,
-            'manual' => 0.15,
-        ]);
+        $weights = RankingWeight::weightsForTeacher($teacherId);
 
         $rows = $students->map(function (User $student) use (
             $pointEntries,

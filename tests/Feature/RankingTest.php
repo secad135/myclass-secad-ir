@@ -13,11 +13,13 @@ use App\Models\Exercise;
 use App\Models\ExerciseSubmission;
 use App\Models\Grade;
 use App\Models\PointEntry;
+use App\Models\RankingWeight;
 use App\Models\School;
 use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\RankingService;
+use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -40,6 +42,8 @@ class RankingTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        $this->withoutMiddleware(PreventRequestForgery::class);
 
         Carbon::setTestNow(Carbon::parse('2026-06-15 12:00:00'));
 
@@ -235,10 +239,111 @@ class RankingTest extends TestCase
         $this->assertSame(0, $ranking['علی']['rank_components']['exercises']['missed']);
     }
 
-    private function rank(string $from = '2026-01-01', string $to = '2026-12-31'): Collection
+    public function test_teacher_custom_weights_are_used_in_ranking(): void
+    {
+        $exam = $this->makeExam();
+        $this->attempt($exam, $this->ali, 20);
+        $this->addPoint($this->sara, 10);
+
+        $defaultRanking = $this->rank('2026-01-01', '2026-12-31');
+        $this->assertSame(1, $defaultRanking['علی']['rank']);
+        $this->assertSame(2, $defaultRanking['سارا']['rank']);
+
+        RankingWeight::create([
+            'teacher_id' => $this->teacher->id,
+            'component' => 'exams',
+            'weight' => 0,
+        ]);
+        RankingWeight::create([
+            'teacher_id' => $this->teacher->id,
+            'component' => 'manual',
+            'weight' => 100,
+        ]);
+
+        $ranking = $this->rank('2026-01-01', '2026-12-31', $this->teacher->id);
+
+        $this->assertSame(1, $ranking['سارا']['rank']);
+        $this->assertSame(2, $ranking['علی']['rank']);
+        $this->assertEquals(1, $ranking['سارا']['rank_components']['manual']['weight']);
+        $this->assertEquals(0, $ranking['سارا']['rank_components']['exams']['weight']);
+    }
+
+    public function test_teacher_can_open_ranking_weights_page(): void
+    {
+        $this->actingAs($this->teacher)
+            ->get(route('teacher.ranking-weights.index'))
+            ->assertOk()
+            ->assertSee('وزن مؤلفه‌های نمره رتبه');
+
+        $this->actingAs($this->teacher)
+            ->get(route('teacher.ranking-weights.create'))
+            ->assertOk()
+            ->assertSee('ثبت وزن سفارشی مؤلفه');
+    }
+
+    public function test_teacher_can_manage_ranking_weights(): void
+    {
+        $this->actingAs($this->teacher)
+            ->post(route('teacher.ranking-weights.store'), [
+                'component' => 'exams',
+                'weight' => 50,
+            ])
+            ->assertRedirect(route('teacher.ranking-weights.index'));
+
+        $this->assertDatabaseHas('ranking_weights', [
+            'teacher_id' => $this->teacher->id,
+            'component' => 'exams',
+            'weight' => 50,
+        ]);
+
+        $weight = RankingWeight::firstOrFail();
+
+        $this->actingAs($this->teacher)
+            ->put(route('teacher.ranking-weights.update', $weight), [
+                'weight' => 65,
+            ])
+            ->assertRedirect(route('teacher.ranking-weights.index'));
+
+        $this->assertDatabaseHas('ranking_weights', [
+            'id' => $weight->id,
+            'weight' => 65,
+        ]);
+
+        $this->actingAs($this->teacher)
+            ->delete(route('teacher.ranking-weights.destroy', $weight))
+            ->assertRedirect(route('teacher.ranking-weights.index'));
+
+        $this->assertDatabaseMissing('ranking_weights', ['id' => $weight->id]);
+    }
+
+    public function test_teacher_cannot_manage_another_teachers_weights(): void
+    {
+        $other = User::create([
+            'name' => 'دبیر دیگر',
+            'email' => 'other@example.com',
+            'password' => 'secret',
+            'is_teacher' => true,
+        ]);
+
+        $weight = RankingWeight::create([
+            'teacher_id' => $other->id,
+            'component' => 'exams',
+            'weight' => 40,
+        ]);
+
+        $this->actingAs($this->teacher)
+            ->put(route('teacher.ranking-weights.update', $weight), ['weight' => 70])
+            ->assertForbidden();
+
+        $this->actingAs($this->teacher)
+            ->delete(route('teacher.ranking-weights.destroy', $weight))
+            ->assertForbidden();
+    }
+
+    private function rank(string $from = '2026-01-01', string $to = '2026-12-31', ?int $teacherId = null): Collection
     {
         return app(RankingService::class)
-            ->rank($this->class, [$this->classSubject->id], $from, $to)
+            ->rank($this->class, [$this->classSubject->id], $from, $to, $teacherId)
             ->keyBy(fn (array $row) => $row['student']->name);
     }
 

@@ -170,6 +170,14 @@ Route::middleware(['auth', 'teacher', 'password.changed'])
         Route::get('students', [\App\Http\Controllers\Teacher\StudentController::class, 'index'])->name('students.index');
         Route::get('students/{student}', [\App\Http\Controllers\Teacher\StudentController::class, 'show'])->name('students.show');
 
+        // وزن مؤلفه‌های نمره رتبه
+        Route::get('ranking-weights', [\App\Http\Controllers\Teacher\RankingWeightController::class, 'index'])->name('ranking-weights.index');
+        Route::get('ranking-weights/create', [\App\Http\Controllers\Teacher\RankingWeightController::class, 'create'])->name('ranking-weights.create');
+        Route::post('ranking-weights', [\App\Http\Controllers\Teacher\RankingWeightController::class, 'store'])->name('ranking-weights.store');
+        Route::get('ranking-weights/{rankingWeight}/edit', [\App\Http\Controllers\Teacher\RankingWeightController::class, 'edit'])->name('ranking-weights.edit');
+        Route::put('ranking-weights/{rankingWeight}', [\App\Http\Controllers\Teacher\RankingWeightController::class, 'update'])->name('ranking-weights.update');
+        Route::delete('ranking-weights/{rankingWeight}', [\App\Http\Controllers\Teacher\RankingWeightController::class, 'destroy'])->name('ranking-weights.destroy');
+
         // حضور/غیاب و امتیاز
         Route::get('attendance/{classSubject}', [\App\Http\Controllers\Teacher\AttendanceController::class, 'show'])->name('attendance.show');
         Route::post('attendance/{classSubject}/start', [\App\Http\Controllers\Teacher\AttendanceController::class, 'start'])->name('attendance.start');
