@@ -34,11 +34,13 @@ class ClassReportService
             ? $classSubjects->firstWhere('id', $selectedSubjectId)
             : null;
 
-        $ranking = $selectedSubject
-            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate, $teacherId)
-            : $service->getClassRanking($class, $fromDate, $toDate, $teacherId);
+        $effectiveTeacherId = $service->resolveRankingTeacherId($class, $selectedSubject, $teacherId);
 
-        $summary          = $service->getClassSummary($class, $fromDate, $toDate, $teacherId);
+        $ranking = $selectedSubject
+            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate, $effectiveTeacherId)
+            : $service->getClassRanking($class, $fromDate, $toDate, $effectiveTeacherId);
+
+        $summary          = $service->getClassSummary($class, $fromDate, $toDate, $effectiveTeacherId);
         $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
 
         $subjects = $classSubjects->pluck('subject.name')
@@ -73,8 +75,10 @@ class ClassReportService
             $currentYear
         );
 
-        $ranking = $service->getClassRanking($class, $fromDate, $toDate, $teacherId);
-        $summary = $service->getClassSummary($class, $fromDate, $toDate, $teacherId);
+        $effectiveTeacherId = $service->resolveRankingTeacherId($class, null, $teacherId);
+
+        $ranking = $service->getClassRanking($class, $fromDate, $toDate, $effectiveTeacherId);
+        $summary = $service->getClassSummary($class, $fromDate, $toDate, $effectiveTeacherId);
 
         $classSubjects    = $class->classSubjects()->with('subject')->get();
         $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);

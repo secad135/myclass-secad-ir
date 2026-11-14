@@ -19,6 +19,7 @@ use App\Models\SchoolClass;
 use App\Models\Subject;
 use App\Models\User;
 use App\Services\RankingService;
+use App\Services\StudentReportService;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -266,6 +267,32 @@ class RankingTest extends TestCase
         $this->assertSame(2, $ranking['علی']['rank']);
         $this->assertEquals(1, $ranking['سارا']['rank_components']['manual']['weight']);
         $this->assertEquals(0, $ranking['سارا']['rank_components']['exams']['weight']);
+    }
+
+    public function test_ranking_without_explicit_teacher_uses_class_teacher_weights(): void
+    {
+        $exam = $this->makeExam();
+        $this->attempt($exam, $this->ali, 20);
+        $this->addPoint($this->sara, 10);
+
+        RankingWeight::create([
+            'teacher_id' => $this->teacher->id,
+            'component' => 'exams',
+            'weight' => 0,
+        ]);
+        RankingWeight::create([
+            'teacher_id' => $this->teacher->id,
+            'component' => 'manual',
+            'weight' => 100,
+        ]);
+
+        $ranking = app(StudentReportService::class)
+            ->getClassRanking($this->class, '2026-01-01', '2026-12-31')
+            ->keyBy(fn (array $row) => $row['student']->name);
+
+        $this->assertSame(1, $ranking['سارا']['rank']);
+        $this->assertEquals(0, $ranking['سارا']['rank_components']['exams']['weight']);
+        $this->assertEquals(1, $ranking['سارا']['rank_components']['manual']['weight']);
     }
 
     public function test_teacher_can_open_ranking_weights_page(): void

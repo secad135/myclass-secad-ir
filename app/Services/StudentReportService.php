@@ -236,7 +236,13 @@ class StudentReportService
     {
         $classSubjectIds = $class->classSubjects()->pluck('id')->toArray();
 
-        return app(RankingService::class)->rank($class, $classSubjectIds, $fromDate, $toDate, $teacherId);
+        return app(RankingService::class)->rank(
+            $class,
+            $classSubjectIds,
+            $fromDate,
+            $toDate,
+            $this->resolveRankingTeacherId($class, null, $teacherId)
+        );
     }
 
     /**
@@ -249,7 +255,32 @@ class StudentReportService
         string $toDate,
         ?int $teacherId = null
     ): Collection {
-        return app(RankingService::class)->rank($class, [$classSubject->id], $fromDate, $toDate, $teacherId);
+        return app(RankingService::class)->rank(
+            $class,
+            [$classSubject->id],
+            $fromDate,
+            $toDate,
+            $this->resolveRankingTeacherId($class, $classSubject, $teacherId)
+        );
+    }
+
+    /**
+     * اگر معلم مشخصی داده نشده باشد، وزن‌های معلم درس (یا معلم کلاس) اعمال شود.
+     */
+    public function resolveRankingTeacherId(
+        SchoolClass $class,
+        ?ClassSubject $classSubject = null,
+        ?int $teacherId = null
+    ): ?int {
+        if ($teacherId !== null) {
+            return $teacherId;
+        }
+
+        if ($classSubject?->teacher_id !== null) {
+            return (int) $classSubject->teacher_id;
+        }
+
+        return $class->teacher_id !== null ? (int) $class->teacher_id : null;
     }
 
     /**

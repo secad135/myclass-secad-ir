@@ -36,11 +36,13 @@ class ReportController extends Controller
             ? $classSubjects->firstWhere('id', $selectedSubjectId)
             : null;
 
-        $ranking = $selectedSubject
-            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate)
-            : $service->getClassRanking($class, $fromDate, $toDate);
+        $effectiveTeacherId = $service->resolveRankingTeacherId($class, $selectedSubject);
 
-        $summary = $service->getClassSummary($class, $fromDate, $toDate);
+        $ranking = $selectedSubject
+            ? $service->getClassRankingBySubject($class, $selectedSubject, $fromDate, $toDate, $effectiveTeacherId)
+            : $service->getClassRanking($class, $fromDate, $toDate, $effectiveTeacherId);
+
+        $summary = $service->getClassSummary($class, $fromDate, $toDate, $effectiveTeacherId);
         $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
         $subjects = $classSubjects->pluck('subject.name')->filter()->values();
 
@@ -68,8 +70,10 @@ class ReportController extends Controller
         $service = new StudentReportService();
         [$fromDate, $toDate] = $service->resolveDateRange(null, null, 'all', $currentYear);
 
-        $ranking = $service->getClassRanking($class, $fromDate, $toDate);
-        $summary = $service->getClassSummary($class, $fromDate, $toDate);
+        $effectiveTeacherId = $service->resolveRankingTeacherId($class);
+
+        $ranking = $service->getClassRanking($class, $fromDate, $toDate, $effectiveTeacherId);
+        $summary = $service->getClassSummary($class, $fromDate, $toDate, $effectiveTeacherId);
         $classSubjects = $class->classSubjects()->with('subject')->get();
         $subjectSummaries = $service->getClassSubjectSummaries($class, $fromDate, $toDate);
         $subjects = $classSubjects->pluck('subject.name')->filter()->values();
